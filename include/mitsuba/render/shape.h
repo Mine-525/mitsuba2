@@ -4,6 +4,7 @@
 #include <mitsuba/core/spectrum.h>
 #include <mitsuba/core/transform.h>
 #include <mitsuba/core/bbox.h>
+#include <enoki/stl.h>
 
 #if defined(MTS_ENABLE_OPTIX)
 #include <mitsuba/render/optix/common.h>
@@ -21,7 +22,7 @@ NAMESPACE_BEGIN(mitsuba)
 template <typename Float, typename Spectrum>
 class MTS_EXPORT_RENDER Shape : public Object {
 public:
-    MTS_IMPORT_TYPES(BSDF, Medium, Emitter, Sensor, MeshAttribute, ShapeKDTree);
+    MTS_IMPORT_TYPES(BSDF, Medium, Emitter, Sensor, MeshAttribute);
 
     // Use 32 bit indices to keep track of indices to conserve memory
     using ScalarIndex = uint32_t;
@@ -327,6 +328,9 @@ public:
     /// Is this shape a triangle mesh?
     bool is_mesh() const { return m_mesh; }
 
+    /// Is this shape a shapegroup?
+    bool is_shapegroup() const { return m_shapegroup; };
+
     /// Does the surface of this shape mark a medium transition?
     bool is_medium_transition() const { return m_interior_medium.get() != nullptr ||
                                                m_exterior_medium.get() != nullptr; }
@@ -375,23 +379,15 @@ public:
      */
     virtual ScalarSize effective_primitive_count() const;
 
-    /**
-     * \brief Return if the shape is a shapegroup or not
-     *
-     * \remark The default implementation return false.
-     */
-    virtual bool is_shapegroup() const;
-
-    /**
-     * \brief Return a pointer to the internal KD-tree (if any)
-     *
-     * \remark The default implementation throws an exception.
-     */
-    virtual const ShapeKDTree *kdtree() const;
 
 #if defined(MTS_ENABLE_EMBREE)
     /// Return the Embree version of this shape
     virtual RTCGeometry embree_geometry(RTCDevice device) const;
+
+    /// Build the embree scene in the shapegroup
+    virtual void init_embree_scene(RTCDevice device);
+    /// Release the embree scene in the shapegroup
+    virtual void release_embree_scene();
 #endif
 
 #if defined(MTS_ENABLE_OPTIX)
@@ -423,6 +419,7 @@ protected:
     std::string get_children_string() const;
 protected:
     bool m_mesh = false;
+    bool m_shapegroup = false;
     ref<BSDF> m_bsdf;
     ref<Emitter> m_emitter;
     ref<Sensor> m_sensor;

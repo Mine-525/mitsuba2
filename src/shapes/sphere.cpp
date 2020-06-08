@@ -361,8 +361,8 @@ public:
         if (unlikely(any(singularity_mask)))
             si.dp_dv[singularity_mask] = Vector3f(1.f, 0.f, 0.f);
 
-        si.dp_du = m_to_world * si.dp_du * (2.f * math::Pi<Float>);
-        si.dp_dv = m_to_world * si.dp_dv * math::Pi<Float>;
+        si.dp_du = m_to_world.transform_affine(si.dp_du * (2.f * math::Pi<Float>));
+        si.dp_dv = m_to_world.transform_affine(si.dp_dv * math::Pi<Float>);
 
         if (m_flip_normals)
             si.sh_frame.n = -si.sh_frame.n;

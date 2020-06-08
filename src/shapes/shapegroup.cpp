@@ -10,7 +10,59 @@
 
 NAMESPACE_BEGIN(mitsuba)
 
-// description of shapegroup
+
+/**!
+
+.. _shape-shapegroup:
+
+Shape group (:monosp:`shapegroup`)
+----------------------------------
+
+.. pluginparameters::
+
+ * - (Nested plugin)
+   - :paramtype:`shape`
+   - One or more shapes that should be made available for geometry instancing
+
+This plugin implements a container for shapes that should be made available for geometry instancing.
+Any shapes placed in a shapegroup will not be visible on their own—instead, the renderer will
+precompute ray intersection acceleration data structures so that they can efficiently be referenced
+many times using the :ref:`shape-instance` plugin. This is useful for rendering things like forests,
+where only a few distinct types of trees have to be kept in memory. An example is given below:
+
+.. code-block:: xml
+
+    <!-- Declare a named shape group containing two objects -->
+    <shape type="shapegroup" id="my_shape_group">
+        <shape type="ply">
+            <string name="filename" value="data.ply"/>
+            <bsdf type="roughconductor"/>
+        </shape>
+        <shape type="sphere">
+            <transform name="to_world">
+                <scale value="5"/>
+                <translate y="20"/>
+            </transform>
+            <bsdf type="diffuse"/>
+        </shape>
+    </shape>
+
+    <!-- Instantiate the shape group without any kind of transformation -->
+    <shape type="instance">
+        <ref id="my_shape_group"/>
+    </shape>
+
+    <!-- Create instance of the shape group, but rotated, scaled, and translated -->
+    <shape type="instance">
+        <ref id="my_shape_group"/>
+        <transform name="to_world">
+            <rotate x="1" angle="45"/>
+            <scale value="1.5"/>
+            <translate z="10"/>
+        </transform>
+    </shape>
+
+ */
 
 template <typename Float, typename Spectrum>
 class ShapeGroup final: public Shape<Float, Spectrum> {
@@ -20,64 +72,53 @@ public:
 
     using typename Base::ScalarSize;
 
-    ShapeGroup(const Properties &props){
+    ShapeGroup(const Properties &props) {
         m_id = props.id();
 
-        #if not defined(MTS_ENABLE_EMBREE)
+#if !defined(MTS_ENABLE_EMBREE)
         m_kdtree = new ShapeKDTree(props);
-        #endif
+#endif
 
-        // Add all the child or throw an error
+        // Add children to the underlying datastructure
         for (auto &kv : props.objects()) {
-
             const Class *c_class = kv.second->class_();
-
             if (c_class->name() == "Instance") {
                 Throw("Nested instancing is not permitted");
             } else if (c_class->derives_from(MTS_CLASS(Base))) {
                 Base *shape = static_cast<Base *>(kv.second.get());
                 if (shape->is_shapegroup())
-                    Throw("Nested instancing is not permitted");
+                    Throw("Nested ShapeGroup is not permitted");
                 if (shape->is_emitter())
                     Throw("Instancing of emitters is not supported");
                 if (shape->is_sensor())
                     Throw("Instancing of sensors is not supported");
                 else {
-                    #if defined(MTS_ENABLE_EMBREE)
+#if defined(MTS_ENABLE_EMBREE)
                     m_shapes.push_back(shape);
                     m_bbox.expand(shape->bbox());
-                    #else
+#else
                     m_kdtree->add_shape(shape);
-                    #endif
+#endif
                 }
             } else {
                 Throw("Tried to add an unsupported object of type \"%s\"", kv.second);
             }
         }
 
-
-        #if not defined(MTS_ENABLE_EMBREE)
-        if (m_kdtree->primitive_count() < 100*1024)
-            m_kdtree->set_log_level(Trace);
+#if !defined(MTS_ENABLE_EMBREE)
         if (!m_kdtree->ready())
             m_kdtree->build();
+
         m_bbox = m_kdtree->bbox();
-        #endif
+#endif
 
         m_shapegroup = true;
     }
 
-    #if defined(MTS_ENABLE_EMBREE)
-    ScalarSize primitive_count() const override {
-        ScalarSize count = 0;
-        for (auto shape : m_shapes)
-            count += shape->primitive_count();
-
-        return count;
-    }
-
-    void init_embree_scene(RTCDevice device) override{
-        if(m_scene == nullptr){ // We construct the BVH only once
+#if defined(MTS_ENABLE_EMBREE)
+    void init_embree_scene(RTCDevice device) override {
+        // Construct the BVH only once
+        if(m_scene == nullptr) {
             m_scene = rtcNewScene(device);
             for (auto shape : m_shapes)
                 rtcAttachGeometry(m_scene, shape->embree_geometry(device));
@@ -92,17 +133,28 @@ public:
 
     RTCGeometry embree_geometry(RTCDevice device) const override {
         RTCGeometry instance = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_INSTANCE);
-        // Ensure that the scene of the shapegroup is build
         if(m_scene == nullptr)
             Throw("Embree scene not initialized, call init_embree_scene() first");
         rtcSetGeometryInstancedScene(instance, m_scene);
-
         return instance;
     }
+#else
+    std::pair<Mask, Float> ray_intersect(const Ray3f &ray, Float *cache,
+                                         Mask active) const override {
+        MTS_MASK_ARGUMENT(active);
+        return m_kdtree->template ray_intersect<false>(ray, cache, active);
+    }
+
+    Mask ray_test(const Ray3f &ray, Mask active) const override {
+        MTS_MASK_ARGUMENT(active);
+        return m_kdtree->template ray_intersect<true>(ray, (Float* ) nullptr, active).first;
+    }
+#endif
 
     void fill_surface_interaction(const Ray3f &ray, const Float * cache,
                                   SurfaceInteraction3f &si_out, Mask active) const override {
         MTS_MASK_ARGUMENT(active);
+#if defined(MTS_ENABLE_EMBREE)
         SurfaceInteraction3f si(si_out);
 
         // Extract intersected shape from cache
@@ -117,36 +169,30 @@ public:
             si.shape = gather<ShapePtr>(m_shapes.data(), shape_index, active);
         }
 
-        Float extracted_cache[2] = {cache[0], cache[1]};
+        Float extracted_cache[2] = { cache[0], cache[1] };
         si.shape->fill_surface_interaction(ray, extracted_cache, si, active);
         masked(si_out, active) = si;
-    }
-    #else
-
-    ScalarSize primitive_count() const override { return m_kdtree->primitive_count();}
-
-    std::pair<Mask, Float> ray_intersect(const Ray3f &ray, Float * cache,
-                                         Mask active) const override {
-        MTS_MASK_ARGUMENT(active);
-        return m_kdtree->template ray_intersect<false>(ray, cache, active);
-    }
-
-    Mask ray_test(const Ray3f &ray, Mask active) const override {
-        MTS_MASK_ARGUMENT(active);
-        return m_kdtree->template ray_intersect<true>(ray, (Float* ) nullptr, active).first;
-    }
-
-    void fill_surface_interaction(const Ray3f &ray, const Float * cache,
-                                  SurfaceInteraction3f &si_out, Mask active) const override {
-        MTS_MASK_ARGUMENT(active);
+#else
         masked(si_out, active) = m_kdtree->create_surface_interaction(ray, si_out.t, cache, active);
+#endif
     }
-    #endif
 
-    // We would have prefere if it returned an invalid bbox
-    ScalarBoundingBox3f bbox() const override{ return m_bbox;}
+    ScalarSize primitive_count() const override {
+#if defined(MTS_ENABLE_EMBREE)
+        ScalarSize primitive_count() const override {
+            ScalarSize count = 0;
+            for (auto shape : m_shapes)
+                count += shape->primitive_count();
 
-    ScalarFloat surface_area() const override { return 0.f;}
+            return count;
+#else
+        return m_kdtree->primitive_count();
+#endif
+    }
+
+    ScalarBoundingBox3f bbox() const override{ return m_bbox; }
+
+    ScalarFloat surface_area() const override { return 0.f; }
 
     MTS_INLINE ScalarSize effective_primitive_count() const override { return 0; }
 
@@ -159,7 +205,6 @@ public:
         return oss.str();
     }
 
-    /// Declare RTTI data structures
     MTS_DECLARE_CLASS()
 private:
     ScalarBoundingBox3f m_bbox;
@@ -172,7 +217,6 @@ private:
     #endif
 };
 
-/// Implement RTTI data structures
 MTS_IMPLEMENT_CLASS_VARIANT(ShapeGroup, Shape)
 MTS_EXPORT_PLUGIN(ShapeGroup, "Grouped geometry for instancing")
 NAMESPACE_END(mitsuba)

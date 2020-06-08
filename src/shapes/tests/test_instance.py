@@ -2,219 +2,140 @@ import mitsuba
 import pytest
 import enoki as ek
 
+from mitsuba.python.test.util import fresolver_append_path
 
-# TEST INSTANCING WITH AN ANALYTIC SPHERE
+@fresolver_append_path
+def example_scene_mesh(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
+    from mitsuba.core import xml, ScalarTransform4f as T
+    shape2 = shape.copy()
+    shape2['to_world'] = T.translate(translate) * T.rotate([0, 1, 0], angle) * T.scale(scale)
 
-def example_scene(scale = (1,1,1), translate = (0,0,0), rot = (0,0,0)):
-    from mitsuba.core.xml import load_string
+    return xml.load_dict({
+        'type' : 'scene',
+        'shape' : shape2
+    })
 
-    return load_string("""<scene version='2.0.0'>
-        <shape type='sphere'>
-            <float name="radius" value="1.0"/>
-            <transform name="to_world">
-                <scale x="{}" y="{}" z="{}"/>
-                <translate x="{}" y="{}" z="{}"/>
-                <rotate x="1" angle="{}"/>
-                <rotate y="1" angle="{}"/>
-                <rotate z="1" angle="{}"/>
-            </transform>
-        </shape>
-    </scene>""".format(scale[0], scale[1], scale[2], 
-                       translate[0], translate[1], translate[2],
-                       rot[0], rot[1], rot[2]))
-
-def example_scene_inst(scale = (1,1,1), translate = (0,0,0), rot = (0,0,0)):
-    from mitsuba.core.xml import load_string
-
-    return load_string("""
-        <scene version='2.0.0'>
-            <shape type="shapegroup" id = "s1">
-                <shape type='sphere'>
-                    <float name="radius" value="1.0"/>
-                </shape>
-            </shape>
-            <shape type ="instance">
-                <ref id="s1" />
-                <transform name="to_world">
-                    <scale x="{}" y="{}" z="{}"/>
-                    <translate x="{}" y="{}" z="{}"/>
-                    <rotate x="1" angle="{}"/>
-                    <rotate y="1" angle="{}"/>
-                    <rotate z="1" angle="{}"/>
-                </transform>
-            </shape>
-        </scene>""".format(scale[0], scale[1], scale[2], 
-                           translate[0], translate[1], translate[2],
-                           rot[0], rot[1], rot[2])) 
-
-def example_sphere_inst(scale = (1,1,1), translate = (0,0,0), rot = (0,0,0)):
-    from mitsuba.core.xml import load_string
-
-    return load_string("""
-        <shape version='2.0.0' type ="instance">
-            <shape type="shapegroup" id = "s1">
-                <shape type='sphere'>
-                    <float name="radius" value="1.0"/>
-                </shape>
-            </shape>
-            <transform name="to_world">
-                <scale x="{}" y="{}" z="{}"/>
-                <translate x="{}" y="{}" z="{}"/>
-                <rotate x="1" angle="{}"/>
-                <rotate y="1" angle="{}"/>
-                <rotate z="1" angle="{}"/>
-            </transform>
-        </shape>""".format(scale[0], scale[1], scale[2], 
-                       translate[0], translate[1], translate[2],
-                       rot[0], rot[1], rot[2]))
-
-def example_sphere(scale = (1,1,1), translate = (0,0,0), rot = (0,0,0)):
-    from mitsuba.core.xml import load_string
-
-    return load_string("""
-        <shape version='2.0.0' type='sphere'>
-            <float name="radius" value="1.0"/>
-            <transform name="to_world">
-                <scale x="{}" y="{}" z="{}"/>
-                <translate x="{}" y="{}" z="{}"/>
-                <rotate x="1" angle="{}"/>
-                <rotate y="1" angle="{}"/>
-                <rotate z="1" angle="{}"/>
-            </transform>
-        </shape>""".format(scale[0], scale[1], scale[2], 
-                       translate[0], translate[1], translate[2],
-                       rot[0], rot[1], rot[2]))
+@fresolver_append_path
+def example_scene_mesh_inst(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
+    from mitsuba.core import xml, ScalarTransform4f as T
+    return xml.load_dict({
+        'type' : 'scene',
+        'group_0' : {
+            'type' : 'shapegroup',
+            'shape' : shape
+        },
+        'instance' : {
+            'type' : 'instance',
+            "group" : {
+                "type" : "ref",
+                "id" : "group_0"
+            },
+            'to_world' : T.translate(translate) * T.rotate([0, 1, 0], angle) * T.scale(scale)
+        }
+    })
 
 
-def test01_create(variant_scalar_rgb):
-    if mitsuba.core.MTS_ENABLE_EMBREE:
-        pytest.skip("EMBREE enabled")
+shapes = [
+    { 'type' : 'ply', 'filename' : 'resources/data/ply/sphere.ply' },
+    { 'type' : 'rectangle'},
+    { 'type' : 'sphere'},
+]
 
-    s = example_sphere_inst()
-    assert s is not None
-    assert s.primitive_count() == 1
-    assert s.effective_primitive_count() == 1
-    
-def test02_bbox(variant_scalar_rgb):
-    if mitsuba.core.MTS_ENABLE_EMBREE:
-        pytest.skip("EMBREE enabled")
-
-    r = 10
-    s = example_sphere_inst(scale=(r,r,r))
-    b = s.bbox()
-    assert b.valid()
-    assert ek.allclose(b.center(), [0, 0, 0])
-    assert ek.allclose(b.min,  [-r] * 3)
-    assert ek.allclose(b.max,  [r] * 3)
-    assert ek.allclose(b.extents(), [2 * r] * 3)
-
-    s = example_sphere_inst(translate=(1,2,3))
-    assert ek.allclose(s.bbox().center(), [1, 2, 3])
-
-def test03_bbox(variant_scalar_rgb):
-    if mitsuba.core.MTS_ENABLE_EMBREE:
-        pytest.skip("EMBREE enabled")
-
-    s1 = example_sphere(scale = (5,5,5), translate = (10,15,20), rot = (30,45,93))
-    s2 = example_sphere_inst(scale = (5,5,5), translate = (10,15,20), rot = (30,45,93))
-    b1 = s1.bbox()
-    b2 = s2.bbox()
-    # By construction:
-    assert b2.contains(b1)
-
-def test04_ray_intersect_transform(variant_scalar_rgb):
-    if mitsuba.core.MTS_ENABLE_EMBREE:
-        pytest.skip("EMBREE enabled")
-
-    """Test if the to_world tranform in the instance
-       behave correctly, it is the same test that the ray_interset test
-       in test_sphere but with an instance""" 
+@pytest.mark.parametrize("shape", shapes)
+def test01_ray_intersect(variant_scalar_rgb, shape):
     from mitsuba.core import Ray3f
 
-    for r in [1, 3]:
-        s = example_scene_inst(scale=(r, r, r),translate=(0,1,0), rot=(0,30,0))
+    s = example_scene_mesh(shape)
+    s_inst = example_scene_mesh_inst(shape)
+    # grid size
+    n = 21
+    inv_n = 1.0 / n
+
+    for x in range(n):
+        for y in range(n):
+            x_coord = (2 * (x * inv_n) - 1)
+            y_coord = (2 * (y * inv_n) - 1)
+            ray = Ray3f(o=[x_coord, y_coord + 1, -8], d=[0.0, 0.0, 1.0],
+                        time=0.0, wavelengths=[])
+
+            si_found = s.ray_test(ray)
+            si_found_inst = s_inst.ray_test(ray)
+
+            assert si_found == si_found_inst
+
+            if si_found:
+                si = s.ray_intersect(ray)
+                si_inst = s_inst.ray_intersect(ray)
+
+                assert si.prim_index == si_inst.prim_index
+                assert si.instance is None
+                assert si_inst.instance is not None
+                assert ek.allclose(si.t, si_inst.t, atol=2e-2)
+                assert ek.allclose(si.time, si_inst.time, atol=2e-2)
+                assert ek.allclose(si.p, si_inst.p, atol=2e-2)
+                assert ek.allclose(si.sh_frame.n, si_inst.sh_frame.n, atol=2e-2)
+                assert ek.allclose(si.dp_du, si_inst.dp_du, atol=2e-2)
+                assert ek.allclose(si.dp_dv, si_inst.dp_dv, atol=2e-2)
+                assert ek.allclose(si.uv, si_inst.uv, atol=2e-2)
+                assert ek.allclose(si.wi, si_inst.wi, atol=2e-2)
+
+                u, v = si.shape.normal_derivative(si)
+                u_inst, v_inst = si_inst.instance.normal_derivative(si)
+
+                if ek.norm(u) > 0.0 and ek.norm(v) > 0.0:
+                    assert ek.allclose(u, u_inst, atol=2e-2)
+                    assert ek.allclose(v, v_inst, atol=2e-2)
+
+
+@pytest.mark.parametrize("shape", shapes)
+def test02_ray_intersect_transform(variant_scalar_rgb, shape):
+    from mitsuba.core import Ray3f, ScalarVector3f
+
+    trans = ScalarVector3f([0, 1, 0])
+    angle = 30
+
+    for scale in [0.5, 2.7]:
+        s = example_scene_mesh(shape, scale, trans, angle)
+        s_inst = example_scene_mesh_inst(shape, scale, trans, angle)
+
         # grid size
         n = 21
         inv_n = 1.0 / n
 
         for x in range(n):
             for y in range(n):
-                x_coord = r * (2 * (x * inv_n) - 1)
-                y_coord = r * (2 * (y * inv_n) - 1)
+                x_coord = scale * (2 * (x * inv_n) - 1)
+                y_coord = scale * (2 * (y * inv_n) - 1)
 
-                ray = Ray3f(o=[x_coord, y_coord + 1, -8], d=[0.0, 0.0, 1.0],
-                            time=0.0, wavelengths=[])
-                si_found = s.ray_test(ray)
+                ray = Ray3f(o=ScalarVector3f([x_coord, y_coord, -12]) + trans,
+                            d = [0.0, 0.0, 1.0],
+                            time = 0.0, wavelengths = [])
 
-                assert si_found == (x_coord ** 2 + y_coord ** 2 <= r * r) \
-                    or ek.abs(x_coord ** 2 + y_coord ** 2 - r * r) < 1e-8
-
-                if si_found:
-                    ray = Ray3f(o=[x_coord, y_coord + 1, -8], d=[0.0, 0.0, 1.0],
-                                time=0.0, wavelengths=[])
-                    si = s.ray_intersect(ray)
-                    ray_u = Ray3f(ray)
-                    ray_v = Ray3f(ray)
-                    eps = 1e-4
-                    ray_u.o += si.dp_du * eps
-                    ray_v.o += si.dp_dv * eps
-                    si_u = s.ray_intersect(ray_u)
-                    si_v = s.ray_intersect(ray_v)
-                    if si_u.is_valid():
-                        du = (si_u.uv - si.uv) / eps
-                        assert ek.allclose(du, [1, 0], atol=2e-2)
-                    if si_v.is_valid():
-                        dv = (si_v.uv - si.uv) / eps
-                        assert ek.allclose(dv, [0, 1], atol=2e-2)
-
-
-def test05_ray_intersect_transform(variant_scalar_rgb):
-    if mitsuba.core.MTS_ENABLE_EMBREE:
-        pytest.skip("EMBREE enabled")
-
-    """Test if the instanced sphere has the same behavior than
-        a non-instanced sphere""" 
-    from mitsuba.core import Ray3f
-
-    for r in [1, 3]:
-        s = example_scene(scale=(r, r, r),translate=(0,1,0), rot=(0,30,0))
-        s_inst = example_scene_inst(scale=(r, r, r),translate=(0,1,0), rot=(0,30,0))
-        # grid size
-        n = 21
-        inv_n = 1.0 / n
-
-        for x in range(n):
-            for y in range(n):
-                x_coord = r * (2 * (x * inv_n) - 1)
-                y_coord = r * (2 * (y * inv_n) - 1)
-
-                ray = Ray3f(o=[x_coord, y_coord + 1, -8], d=[0.0, 0.0, 1.0],
-                            time=0.0, wavelengths=[])
                 si_found = s.ray_test(ray)
                 si_found_inst = s_inst.ray_test(ray)
 
                 assert si_found == si_found_inst
 
                 if si_found:
-                    ray = Ray3f(o=[x_coord, y_coord + 1, -8], d=[0.0, 0.0, 1.0],
-                                time=0.0, wavelengths=[])
-                    
                     si = s.ray_intersect(ray)
                     si_inst = s_inst.ray_intersect(ray)
 
                     assert si.prim_index == si_inst.prim_index
                     assert si.instance is None
                     assert si_inst.instance is not None
-                    # we don't compare the shape, because the shape of
-                    # non-instance version is transform before intersection
-                    # and the instance version is not
                     assert ek.allclose(si.t, si_inst.t, atol=2e-2)
                     assert ek.allclose(si.time, si_inst.time, atol=2e-2)
                     assert ek.allclose(si.p, si_inst.p, atol=2e-2)
+                    assert ek.allclose(si.dp_du, si_inst.dp_du, atol=2e-2)
+                    assert ek.allclose(si.dp_dv, si_inst.dp_dv, atol=2e-2)
+                    assert ek.allclose(si.uv, si_inst.uv, atol=2e-2)
                     assert ek.allclose(si.wi, si_inst.wi, atol=2e-2)
 
-                    u, v = si.shape.normal_derivative(si)
-                    u_inst, v_inst = si_inst.instance.normal_derivative(si)
-            
-                    assert ek.allclose(ek.normalize(u), ek.normalize(u_inst), atol=2e-2)
-                    assert ek.allclose(ek.normalize(v), ek.normalize(v_inst), atol=2e-2)
+                    for shading_frame in [True, False]:
+                        u, v = si.normal_derivative(shading_frame)
+                        u_inst, v_inst = si_inst.normal_derivative(shading_frame)
+
+                        if ek.norm(u) > 0.0 and ek.norm(v) > 0.0:
+                            assert ek.allclose(u, u_inst, atol=2e-2)
+                            assert ek.allclose(v, v_inst, atol=2e-2)
+

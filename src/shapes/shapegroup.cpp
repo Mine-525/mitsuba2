@@ -117,26 +117,33 @@ public:
 
 #if defined(MTS_ENABLE_EMBREE)
     void init_embree_scene(RTCDevice device) override {
-        // Construct the BVH only once
-        if(m_scene == nullptr) {
-            m_scene = rtcNewScene(device);
-            for (auto shape : m_shapes)
-                rtcAttachGeometry(m_scene, shape->embree_geometry(device));
-
-            rtcCommitScene(m_scene);
+        if constexpr (!is_cuda_array_v<Float>) {
+            // Construct the BVH only once
+            if(m_scene == nullptr) {
+                m_scene = rtcNewScene(device);
+                for (auto shape : m_shapes)
+                    rtcAttachGeometry(m_scene, shape->embree_geometry(device));
+                rtcCommitScene(m_scene);
+            }
         }
     }
 
     void release_embree_scene() override {
-        rtcReleaseScene(m_scene);
+        if constexpr (!is_cuda_array_v<Float>) {
+            rtcReleaseScene(m_scene);
+        }
     }
 
     RTCGeometry embree_geometry(RTCDevice device) const override {
-        RTCGeometry instance = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_INSTANCE);
-        if(m_scene == nullptr)
-            Throw("Embree scene not initialized, call init_embree_scene() first");
-        rtcSetGeometryInstancedScene(instance, m_scene);
-        return instance;
+        if constexpr (!is_cuda_array_v<Float>) {
+            RTCGeometry instance = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_INSTANCE);
+            if(m_scene == nullptr)
+                Throw("Embree scene not initialized, call init_embree_scene() first");
+            rtcSetGeometryInstancedScene(instance, m_scene);
+            return instance;
+        } else {
+            Throw("embree_geometry() should only be called in CPU mode.");
+        }
     }
 #else
     std::pair<Mask, Float> ray_intersect(const Ray3f &ray, Float *cache,
@@ -151,7 +158,7 @@ public:
     }
 #endif
 
-    void fill_surface_interaction(const Ray3f &ray, const Float * cache,
+    void fill_surface_interaction(const Ray3f &ray, const Float *cache,
                                   SurfaceInteraction3f &si_out, Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 #if defined(MTS_ENABLE_EMBREE)
@@ -179,12 +186,11 @@ public:
 
     ScalarSize primitive_count() const override {
 #if defined(MTS_ENABLE_EMBREE)
-        ScalarSize primitive_count() const override {
-            ScalarSize count = 0;
-            for (auto shape : m_shapes)
-                count += shape->primitive_count();
+        ScalarSize count = 0;
+        for (auto shape : m_shapes)
+            count += shape->primitive_count();
 
-            return count;
+        return count;
 #else
         return m_kdtree->primitive_count();
 #endif

@@ -116,6 +116,7 @@ template <typename Float, typename Spectrum>
 void embree_intersect_scalar(int* valid,
                              void* geometryUserPtr,
                              unsigned int geomID,
+                             unsigned int instID,
                              RTCRay* rtc_ray,
                              RTCHit* rtc_hit) {
     MTS_IMPORT_TYPES(Shape)
@@ -144,6 +145,8 @@ void embree_intersect_scalar(int* valid,
         if (success) {
             rtc_ray->tfar = tt;
             rtc_hit->geomID = geomID;
+            rtc_hit->primID = 0;
+            rtc_hit->instID[0] = instID;
         }
     } else {
         if (shape->ray_test(ray))
@@ -155,6 +158,7 @@ template <typename Float, typename Spectrum>
 void embree_intersect_packet(int* valid,
                              void* geometryUserPtr,
                              unsigned int geomID,
+                             unsigned int instID,
                              RTCRayW* rays,
                              RTCHitW* hits) {
     MTS_IMPORT_TYPES(Shape)
@@ -185,6 +189,9 @@ void embree_intersect_packet(int* valid,
         active &= success;
         store(rays->tfar, tt, active);
         store(hits->geomID, Int(geomID), active);
+        store(hits->geomID, Int(geomID), active);
+        store(hits->primID, Int(0), active);
+        store(hits->instID[0], Int(instID), active);
     } else {
         active &= shape->ray_test(ray);
         store(rays->tfar, Float(-math::Infinity<Float>), active);
@@ -195,23 +202,28 @@ template <typename Float, typename Spectrum>
 void embree_intersect(const RTCIntersectFunctionNArguments* args) {
     if constexpr (!is_array_v<Float>) {
         RTCRayHit *rh = (RTCRayHit *) args->rayhit;
-        embree_intersect_scalar<Float, Spectrum>(args->valid, args->geometryUserPtr, args->geomID,
-                                                 (RTCRay*) &rh->ray, (RTCHit*) &rh->hit);
+        embree_intersect_scalar<Float, Spectrum>(
+            args->valid, args->geometryUserPtr, args->geomID,
+            args->context->instID[0], (RTCRay *) &rh->ray, (RTCHit *) &rh->hit);
     } else {
         RTCRayHitW *rh = (RTCRayHitW *) args->rayhit;
-        embree_intersect_packet<Float, Spectrum>(args->valid, args->geometryUserPtr, args->geomID,
-                                                 (RTCRayW*) &rh->ray, (RTCHitW*) &rh->hit);
+        embree_intersect_packet<Float, Spectrum>(
+            args->valid, args->geometryUserPtr, args->geomID,
+            args->context->instID[0], (RTCRayW *) &rh->ray,
+            (RTCHitW *) &rh->hit);
     }
 }
 
 template <typename Float, typename Spectrum>
 void embree_occluded(const RTCOccludedFunctionNArguments* args) {
     if constexpr (!is_array_v<Float>) {
-        embree_intersect_scalar<Float, Spectrum>(args->valid, args->geometryUserPtr, args->geomID,
-                                                 (RTCRay*) args->ray, nullptr);
+        embree_intersect_scalar<Float, Spectrum>(
+            args->valid, args->geometryUserPtr, args->geomID,
+            args->context->instID[0], (RTCRay *) args->ray, nullptr);
     } else {
-        embree_intersect_packet<Float, Spectrum>(args->valid, args->geometryUserPtr, args->geomID,
-                                                 (RTCRayW*) args->ray, nullptr);
+        embree_intersect_packet<Float, Spectrum>(
+            args->valid, args->geometryUserPtr, args->geomID,
+            args->context->instID[0], (RTCRayW *) args->ray, nullptr);
     }
 }
 

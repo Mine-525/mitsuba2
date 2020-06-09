@@ -5,20 +5,20 @@ import enoki as ek
 from mitsuba.python.test.util import fresolver_append_path
 
 @fresolver_append_path
-def example_scene_mesh(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
+def example_scene(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
     from mitsuba.core import xml, ScalarTransform4f as T
-    shape2 = shape.copy()
-    shape2['to_world'] = T.translate(translate) * T.rotate([0, 1, 0], angle) * T.scale(scale)
 
-    return xml.load_dict({
+    to_world = T.translate(translate) * T.rotate([0, 1, 0], angle) * T.scale(scale)
+
+    shape2 = shape.copy()
+    shape2['to_world'] = to_world
+
+    s = xml.load_dict({
         'type' : 'scene',
         'shape' : shape2
     })
 
-@fresolver_append_path
-def example_scene_mesh_inst(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
-    from mitsuba.core import xml, ScalarTransform4f as T
-    return xml.load_dict({
+    s_inst = xml.load_dict({
         'type' : 'scene',
         'group_0' : {
             'type' : 'shapegroup',
@@ -30,9 +30,11 @@ def example_scene_mesh_inst(shape, scale=1.0, translate=[0, 0, 0], angle=0.0):
                 "type" : "ref",
                 "id" : "group_0"
             },
-            'to_world' : T.translate(translate) * T.rotate([0, 1, 0], angle) * T.scale(scale)
+            'to_world' : to_world
         }
     })
+
+    return s, s_inst
 
 
 shapes = [
@@ -41,12 +43,13 @@ shapes = [
     { 'type' : 'sphere'},
 ]
 
+
 @pytest.mark.parametrize("shape", shapes)
 def test01_ray_intersect(variant_scalar_rgb, shape):
     from mitsuba.core import Ray3f
 
-    s = example_scene_mesh(shape)
-    s_inst = example_scene_mesh_inst(shape)
+    s, s_inst = example_scene(shape)
+
     # grid size
     n = 21
     inv_n = 1.0 / n
@@ -92,11 +95,10 @@ def test02_ray_intersect_transform(variant_scalar_rgb, shape):
     from mitsuba.core import Ray3f, ScalarVector3f
 
     trans = ScalarVector3f([0, 1, 0])
-    angle = 30
+    angle = 15
 
     for scale in [0.5, 2.7]:
-        s = example_scene_mesh(shape, scale, trans, angle)
-        s_inst = example_scene_mesh_inst(shape, scale, trans, angle)
+        s, s_inst = example_scene(shape, scale, trans, angle)
 
         # grid size
         n = 21

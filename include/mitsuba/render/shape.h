@@ -383,7 +383,6 @@ public:
 #if defined(MTS_ENABLE_EMBREE)
     /// Return the Embree version of this shape
     virtual RTCGeometry embree_geometry(RTCDevice device) const;
-
     /// Build the embree scene in the shapegroup
     virtual void init_embree_scene(RTCDevice device);
     /// Release the embree scene in the shapegroup

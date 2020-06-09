@@ -73,9 +73,8 @@ Scene<Float, Spectrum>::ray_intersect_cpu(const Ray3f &ray, Mask active) const {
             if (rh.ray.tfar != ray.maxt) {
                 ScopedPhase sp(ProfilerPhase::CreateSurfaceInteraction);
                 uint32_t shape_index = rh.hit.geomID;
-                uint32_t prim_index = rh.hit.primID;
-                // We get level 0 because we only support one level
-                // of instancing for now
+                uint32_t prim_index  = rh.hit.primID;
+                // We get level 0 because we only support one level of instancing
                 uint32_t inst_index = rh.hit.instID[0];
 
                 // Fill in basic information common to all shapes
@@ -95,7 +94,7 @@ Scene<Float, Spectrum>::ray_intersect_cpu(const Ray3f &ray, Mask active) const {
                 } else {
                     // If the hit is on an instance
                     si.instance = m_shapes[inst_index];
-                    Float cache[3] = { rh.hit.u, rh.hit.v, (Float)shape_index};
+                    Float cache[3] = { rh.hit.u, rh.hit.v, (Float) shape_index };
                     si.instance->fill_surface_interaction(ray, cache, si);
                 }
 
@@ -151,7 +150,7 @@ Scene<Float, Spectrum>::ray_intersect_cpu(const Ray3f &ray, Mask active) const {
                 si.wavelengths = ray.wavelengths;
                 si.prim_index = prim_index;
 
-                Mask hit_not_inst = hit && eq(inst_index, RTC_INVALID_GEOMETRY_ID);
+                Mask hit_not_inst = hit &&  eq(inst_index, RTC_INVALID_GEOMETRY_ID);
                 Mask hit_inst     = hit && neq(inst_index, RTC_INVALID_GEOMETRY_ID);
 
                 // Set si.instance and si.shape
@@ -160,7 +159,7 @@ Scene<Float, Spectrum>::ray_intersect_cpu(const Ray3f &ray, Mask active) const {
                 masked(si.instance, hit_inst)  = shape;
                 masked(si.shape, hit_not_inst) = shape;
 
-                Float cache[3] = { load<Float>(rh.hit.u), load<Float>(rh.hit.v), shape_index};
+                Float cache[3] = { load<Float>(rh.hit.u), load<Float>(rh.hit.v), shape_index };
                 shape->fill_surface_interaction(ray, cache, si, hit);
 
                 // Gram-schmidt orthogonalization to compute local shading frame

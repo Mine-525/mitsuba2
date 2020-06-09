@@ -80,7 +80,6 @@ public:
         ScalarBoundingBox3f result;
         for (int i = 0; i < 8; ++i)
             result.expand(m_to_world * bbox.corner(i));
-
         return result;
     }
 
@@ -158,17 +157,15 @@ public:
 
 #if defined(MTS_ENABLE_EMBREE)
     RTCGeometry embree_geometry(RTCDevice device) const override {
-        RTCGeometry instance = m_shapegroup->embree_geometry(device);
-        rtcSetGeometryTimeStepCount(instance, 1);
-
-        float transform[16];
-        for (size_t i = 0; i < 16; ++i)
-            transform[i] = m_to_world.matrix(i % 4, i / 4);
-
-        rtcSetGeometryTransform(instance, 0, RTC_FORMAT_FLOAT4X4_COLUMN_MAJOR, transform);
-        rtcCommitGeometry(instance);
-
-        return instance;
+        if constexpr (!is_cuda_array_v<Float>) {
+            RTCGeometry instance = m_shapegroup->embree_geometry(device);
+            rtcSetGeometryTimeStepCount(instance, 1);
+            rtcSetGeometryTransform(instance, 0, RTC_FORMAT_FLOAT4X4_COLUMN_MAJOR, &m_to_world.matrix);
+            rtcCommitGeometry(instance);
+            return instance;
+        } else {
+            Throw("embree_geometry() should only be called in CPU mode.");
+        }
     }
 #endif
 

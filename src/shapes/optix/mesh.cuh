@@ -85,9 +85,8 @@ extern "C" __global__ void __closesthit__mesh() {
             }
         }
 
-        Vector3f ray_o = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
-        Vector3f ray_d = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
-        float t = sqrt(squared_norm(p - ray_o) / squared_norm(ray_d));
+        Ray3f ray = get_ray_instance_space();
+        float t = sqrt(squared_norm(p - ray.o) / squared_norm(ray.d));
 
         write_output_params(params, launch_index,
                             sbt_data->shape_ptr,

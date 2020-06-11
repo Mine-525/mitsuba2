@@ -256,8 +256,18 @@ MTS_VARIANT void Shape<Float, Spectrum>::optix_prepare_geometry() {
 MTS_VARIANT void Shape<Float, Spectrum>::optix_prepare_instance(const OptixDeviceContext&, OptixInstance&, uint32_t) {
     NotImplementedError("optix_prepare_instance");
 }
-MTS_VARIANT void Shape<Float, Spectrum>::optix_gas_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&) {
-    NotImplementedError("optix_gas_handle");
+MTS_VARIANT void Shape<Float, Spectrum>::optix_accel_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&) {
+    NotImplementedError("optix_accel_handle");
+}
+MTS_VARIANT void Shape<Float, Spectrum>::optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records, OptixProgramGroup *program_groups) {
+    optix_prepare_geometry();
+    // Set hitgroup record data
+    hitgroup_records.push_back(HitGroupSbtRecord());
+    hitgroup_records.back().data = { (uintptr_t) this, m_optix_data_ptr };
+
+    size_t program_group_idx = (is_mesh() ? 2 : 3 + get_shape_descr_idx(this));
+    // Setup the hitgroup record and copy it to the hitgroup records array
+    rt_check(optixSbtRecordPackHeader(program_groups[program_group_idx], &hitgroup_records.back()));
 }
 
 MTS_VARIANT void Shape<Float, Spectrum>::optix_build_input(OptixBuildInput &build_input) const {
@@ -386,15 +396,6 @@ Shape<Float, Spectrum>::bbox(ScalarIndex index, const ScalarBoundingBox3f &clip)
 MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize
 Shape<Float, Spectrum>::primitive_count() const {
     return 1;
-}
-
-MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize
-Shape<Float, Spectrum>::shape_count() const {
-    return 1;
-}
-MTS_VARIANT std::vector<ref<Shape<Float, Spectrum>>>
-Shape<Float, Spectrum>::shapes() {
-    return { this };
 }
 
 MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize

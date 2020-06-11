@@ -69,7 +69,7 @@ where only a few distinct types of trees have to be kept in memory. An example i
 template <typename Float, typename Spectrum>
 class ShapeGroup final: public Shape<Float, Spectrum> {
 public:
-    MTS_IMPORT_BASE(Shape, is_emitter, is_sensor, m_id, m_shapegroup, m_sbt_offset)
+    MTS_IMPORT_BASE(Shape, is_emitter, is_sensor, m_id, m_shapegroup)
     MTS_IMPORT_TYPES(ShapeKDTree)
 
     using typename Base::ScalarSize;
@@ -203,10 +203,6 @@ public:
 
     ScalarFloat surface_area() const override { return 0.f; }
 
-    virtual ScalarSize shape_count() const override { return m_shapes.size(); }
-
-    virtual std::vector<ref<Base>> shapes() override { return m_shapes; }
-
     MTS_INLINE ScalarSize effective_primitive_count() const override { return 0; }
 
     std::string to_string() const override {
@@ -219,11 +215,16 @@ public:
     }
 
 #if defined(MTS_ENABLE_OPTIX)
-    virtual void optix_gas_handle(const OptixDeviceContext& context, OptixTraversableHandle &out_handle, uint32_t &out_sbt_offset) override {
-        if (m_accel == 0ull)
-            build_gas(m_shapes, context, m_sbt_offset, m_accel, m_accel_buffer_meshes, m_accel_buffer_others, m_accel_buffer_ias);
-        out_handle = m_accel;
+    virtual void optix_accel_handle(const OptixDeviceContext& context, OptixTraversableHandle &out_handle, uint32_t &out_sbt_offset) override {
+        if (m_accel.handle == 0ull)
+            build_gas(m_shapes, context, m_sbt_offset, m_accel);
+        out_handle = m_accel.handle;
         out_sbt_offset = m_sbt_offset;
+    }
+
+    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records, OptixProgramGroup *program_groups) override {
+        m_sbt_offset = hitgroup_records.size();
+        fill_hitgroup_records(hitgroup_records, m_shapes, program_groups);
     }
 #endif
 
@@ -239,10 +240,9 @@ private:
     #endif
     #if defined(MTS_ENABLE_OPTIX)
         std::vector<ref<Base>> m_shapes;
-        OptixTraversableHandle m_accel = 0ull;
-        void* m_accel_buffer_meshes;
-        void* m_accel_buffer_others;
-        void* m_accel_buffer_ias;
+        OptixAccelData m_accel;
+        /// OptiX hitgroup sbt offset
+        uint32_t m_sbt_offset;
     #endif
 };
 

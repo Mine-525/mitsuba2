@@ -7,7 +7,8 @@
 #include <enoki/stl.h>
 
 #if defined(MTS_ENABLE_OPTIX)
-#include <mitsuba/render/optix/common.h>
+# include <mitsuba/render/optix/common.h>
+# include <mitsuba/render/optix/shapes.h>
 #endif
 
 NAMESPACE_BEGIN(mitsuba)
@@ -382,17 +383,6 @@ public:
      */
     virtual ScalarSize effective_primitive_count() const;
 
-    /**
-     * \brief Returns the number of sub-shapes that make up this shape
-     * \remark The default implementation simply returns \c 1
-     */
-    virtual ScalarSize shape_count() const;
-    /**
-     * \brief Returns a vector of sub-shapes that make up this shape
-     * \remark The default implementation simply returns a vector containing \c this
-     */
-    virtual std::vector<ref<Shape>> shapes();
-
 
 #if defined(MTS_ENABLE_EMBREE)
     /// Return the Embree version of this shape
@@ -408,14 +398,12 @@ public:
     virtual void optix_prepare_geometry();
     /// Fill the OptixBuildInput struct
     virtual void optix_build_input(OptixBuildInput&) const;
-    /// Return a pointer (GPU memory) to the shape's OptiX hitgroup data buffer
-    virtual void* optix_hitgroup_data() { return m_optix_data_ptr; }
     /// Prepare OptiX instance (only for instance)
     virtual void optix_prepare_instance(const OptixDeviceContext&, OptixInstance&, uint32_t);
-
-    virtual void optix_gas_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&);
-    /// Sets the sbt offset of this shape's hitgroup
-    virtual void optix_set_sbt_offset(uint32_t sbt_offset) { m_sbt_offset = sbt_offset; }
+    /// Prepare OptiX acceleration structure handle
+    virtual void optix_accel_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&);
+    /// Fill the OptiX hitgroup recrods associated with this shape (may be recursive in the case of shape groups)
+    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records, OptixProgramGroup *program_groups);
 #endif
 
     void traverse(TraversalCallback *callback) override;
@@ -453,8 +441,6 @@ protected:
 #if defined(MTS_ENABLE_OPTIX)
     /// OptiX hitgroup data buffer
     void* m_optix_data_ptr = nullptr;
-    /// OptiX hitgroup sbt offset
-    uint32_t m_sbt_offset;
 #endif
 };
 

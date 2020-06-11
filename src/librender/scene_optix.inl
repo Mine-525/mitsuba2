@@ -32,27 +32,10 @@ struct OptixState {
     OptixModule module = nullptr;
     OptixProgramGroup program_groups[ProgramGroupCount];
     OptixShaderBindingTable sbt = {};
-    OptixTraversableHandle accel;
-    void* accel_buffer_meshes;
-    void* accel_buffer_others;
-    void* accel_buffer_ias;
+    OptixAccelData accel;
     void* params;
     char *custom_optix_shapes_program_names[2 * custom_optix_shapes_count];
 };
-
-template <typename T>
-struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) SbtRecord {
-    char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-    T data;
-};
-
-struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) EmptySbtRecord {
-    char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-};
-
-using RayGenSbtRecord   = EmptySbtRecord;
-using MissSbtRecord     = EmptySbtRecord;
-using HitGroupSbtRecord = SbtRecord<OptixHitGroupData>;
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*props*/) {
     Log(Info, "Building scene in OptiX ..");
@@ -193,12 +176,13 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
     // ---------------------------------
     //  Shader Binding Table generation
     // ---------------------------------
-    size_t shapes_count = 0;
-    for (Shape* shape: m_shapes)
-        shapes_count += shape->shape_count();
-    for (Shape* shape: m_shapegroups)
-        shapes_count += shape->shape_count();
+    std::vector<HitGroupSbtRecord> hg_sbts;
 
+    fill_hitgroup_records(hg_sbts, m_shapes, s.program_groups);
+    for (Shape* shapegroup: m_shapegroups)
+        shapegroup->optix_fill_hitgroup_records(hg_sbts, s.program_groups);
+
+    size_t shapes_count = hg_sbts.size();
     void* records = cuda_malloc(sizeof(RayGenSbtRecord) + sizeof(MissSbtRecord) + sizeof(HitGroupSbtRecord) * shapes_count);
 
     RayGenSbtRecord raygen_sbt;
@@ -213,39 +197,6 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
 
     // Allocate hitgroup records array
     void* hitgroup_records = (char*)records + sizeof(RayGenSbtRecord) + sizeof(MissSbtRecord);
-
-    uint32_t shape_index = 0;
-    std::vector<HitGroupSbtRecord> hg_sbts(shapes_count);
-
-    auto fetch_hitgroup_records = [&](std::vector<ref<Shape>> shapes) {
-        for (size_t i = 0; i < 2; i++) {
-            for (Shape* shape: shapes) {
-                // TODO: make this more uniform
-                if (shape->is_instance())
-                    continue;
-                // true for meshes at 1st outer iteration
-                if (i == !shape->is_mesh()) {
-                    size_t program_group_idx = (shape->is_mesh() ? 2 : 3 + get_shape_descr_idx(shape));
-                    // Setup the hitgroup record and copy it to the hitgroup records array
-                    rt_check(optixSbtRecordPackHeader(s.program_groups[program_group_idx], &hg_sbts[shape_index]));
-                    // Prepare shape optix data and AABB
-                    shape->optix_prepare_geometry();
-                    shape->optix_set_sbt_offset(shape_index);
-                    // Set hitgroup record data
-                    hg_sbts[shape_index].data.shape_ptr = (uintptr_t) shape;
-                    hg_sbts[shape_index].data.data = shape->optix_hitgroup_data();
-                    ++shape_index;
-                }
-            }
-        }
-    };
-
-    fetch_hitgroup_records(m_shapes);
-
-    for (Shape* shapegroup: m_shapegroups) {
-        shapegroup->optix_set_sbt_offset(shape_index);
-        fetch_hitgroup_records(shapegroup->shapes());
-    }
 
     // Copy HitGroupRecords to the GPU
     cuda_memcpy_to_device(hitgroup_records, hg_sbts.data(), shapes_count * sizeof(HitGroupSbtRecord));
@@ -275,15 +226,12 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_parameters_changed_gpu() {
     OptixState &s = *(OptixState *) m_accel;
-    build_gas(m_shapes, s.context, 0, s.accel, s.accel_buffer_meshes, s.accel_buffer_others, s.accel_buffer_ias);
+    build_gas(m_shapes, s.context, 0, s.accel);
 }
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_release_gpu() {
     OptixState &s = *(OptixState *) m_accel;
     cuda_free((void*)s.sbt.raygenRecord);
-    cuda_free((void*)s.accel_buffer_meshes);
-    cuda_free((void*)s.accel_buffer_others);
-    cuda_free((void*)s.accel_buffer_ias);
     cuda_free((void*)s.params);
     rt_check(optixPipelineDestroy(s.pipeline));
     for (size_t i = 0; i < ProgramGroupCount; i++)
@@ -352,7 +300,7 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, Mask active) const 
             // Out: Hit flag
             nullptr,
             // top_object
-            s.accel
+            s.accel.handle
         };
 
         cuda_memcpy_to_device(s.params, &params, sizeof(OptixParams));
@@ -452,7 +400,7 @@ Scene<Float, Spectrum>::ray_test_gpu(const Ray3f &ray_, Mask active) const {
             // Out: Hit flag
             hit.data(),
             // top_object
-            s.accel
+            s.accel.handle
         };
 
         cuda_memcpy_to_device(s.params, &params, sizeof(OptixParams));

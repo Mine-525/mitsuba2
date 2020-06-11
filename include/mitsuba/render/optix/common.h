@@ -14,6 +14,20 @@ struct OptixHitGroupData {
     void* data;
 };
 
+template <typename T>
+struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) SbtRecord {
+    char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+    T data;
+};
+
+struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) EmptySbtRecord {
+    char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+};
+
+using RayGenSbtRecord   = EmptySbtRecord;
+using MissSbtRecord     = EmptySbtRecord;
+using HitGroupSbtRecord = SbtRecord<OptixHitGroupData>;
+
 /// Launch-varying parameters
 struct OptixParams {
     bool    *in_mask;
@@ -54,12 +68,18 @@ __device__ void write_output_params(OptixParams &params,
                                     Vector3f dp_dv,
                                     float t) {
 
+    // Transform inputs if the object is inside an instance
     if (optixGetInstanceId() != ~0u) {
-        p = make_vector3f(optixTransformPointFromObjectToWorldSpace(make_float3(p)));
-        ns = normalize(make_vector3f(optixTransformNormalFromObjectToWorldSpace(make_float3(ns))));
-        ng = normalize(make_vector3f(optixTransformNormalFromObjectToWorldSpace(make_float3(ng))));
-        dp_du = make_vector3f(optixTransformVectorFromObjectToWorldSpace(make_float3(dp_du)));
-        dp_dv = make_vector3f(optixTransformVectorFromObjectToWorldSpace(make_float3(dp_dv)));
+        float m[12], inv[12];
+        optixGetObjectToWorldTransformMatrix(m);
+        optixGetWorldToObjectTransformMatrix(inv);
+        Transform4f to_world(m, inv);
+
+        p = to_world.transform_point(p);
+        ns = normalize(to_world.transform_normal(ns));
+        ng = normalize(to_world.transform_normal(ng));
+        dp_du = to_world.transform_vector(dp_du);
+        dp_dv = to_world.transform_vector(dp_dv);
     }
 
     params.out_shape_ptr[launch_index] = shape_ptr;

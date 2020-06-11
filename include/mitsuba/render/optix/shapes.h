@@ -33,8 +33,36 @@ size_t get_shape_descr_idx(Shape *shape) {
           "'custom_optix_shapes' table.", name);
 }
 
+struct OptixAccelData {
+    OptixTraversableHandle handle = 0ull;
+    void* buffer_meshes = nullptr;
+    void* buffer_others = nullptr;
+    void* buffer_ias = nullptr;
+
+    ~OptixAccelData() {
+        if (handle) {
+            cuda_free(buffer_meshes);
+            cuda_free(buffer_others);
+            cuda_free(buffer_ias);
+        }
+    }
+};
+
 template <typename Shape>
-void build_gas(std::vector<ref<Shape>> &shapes, const OptixDeviceContext& context, uint32_t base_sbt_offset, OptixTraversableHandle &out_accel, void* &out_accel_buffer_meshes, void* &out_accel_buffer_others, void* &out_accel_buffer_ias) {
+void fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records,
+                           std::vector<ref<Shape>> &shapes,
+                           OptixProgramGroup *program_groups) {
+    for (size_t i = 0; i < 2; i++)
+        for (Shape* shape: shapes)
+            if (i == !shape->is_mesh())
+                shape->optix_fill_hitgroup_records(hitgroup_records, program_groups);
+}
+
+template <typename Shape>
+void build_gas(std::vector<ref<Shape>> &shapes,
+               const OptixDeviceContext &context,
+               uint32_t base_sbt_offset,
+               OptixAccelData &accel) {
 
     if (shapes.empty())
         return;
@@ -128,17 +156,17 @@ void build_gas(std::vector<ref<Shape>> &shapes, const OptixDeviceContext& contex
         return accel;
     };
 
-    OptixTraversableHandle meshes_accel = build_gas(shape_meshes, out_accel_buffer_meshes);
-    OptixTraversableHandle others_accel = build_gas(shape_others, out_accel_buffer_others);
+    OptixTraversableHandle meshes_accel = build_gas(shape_meshes, accel.buffer_meshes);
+    OptixTraversableHandle others_accel = build_gas(shape_others, accel.buffer_others);
 
     // ----------------------------------------------------------
     //  Build IAS to support mixture of meshes, instances and custom shapes
     // ----------------------------------------------------------
 
     if (!shape_others.empty() && shape_meshes.empty() && shape_instances.empty())
-        out_accel = others_accel;
+        accel.handle = others_accel;
     else if (shape_others.empty() && !shape_meshes.empty() && shape_instances.empty())
-        out_accel = meshes_accel;
+        accel.handle = meshes_accel;
     else {
         uint32_t instances_count = !shape_meshes.empty() + !shape_others.empty() + shape_instances.size();
         std::vector<OptixInstance> instances(instances_count);
@@ -190,7 +218,7 @@ void build_gas(std::vector<ref<Shape>> &shapes, const OptixDeviceContext& contex
         rt_check(optixAccelComputeMemoryUsage(context, &accel_options, &build_input, 1, &buffer_sizes));
 
         void* d_temp_buffer = cuda_malloc(buffer_sizes.tempSizeInBytes);
-        out_accel_buffer_ias  = cuda_malloc(buffer_sizes.outputSizeInBytes);
+        accel.buffer_ias  = cuda_malloc(buffer_sizes.outputSizeInBytes);
 
         rt_check(optixAccelBuild(
             context,
@@ -200,9 +228,9 @@ void build_gas(std::vector<ref<Shape>> &shapes, const OptixDeviceContext& contex
             1,              // num build inputs
             (CUdeviceptr)d_temp_buffer,
             buffer_sizes.tempSizeInBytes,
-            (CUdeviceptr)out_accel_buffer_ias,
+            (CUdeviceptr)accel.buffer_ias,
             buffer_sizes.outputSizeInBytes,
-            &out_accel,
+            &accel.handle,
             0,  // emitted property list
             0   // num emitted properties
         ));

@@ -91,8 +91,6 @@ public:
         return m_shapegroup->primitive_count();
     }
 
-    virtual ScalarSize shape_count() const override { return 0; }
-
     //! @}
     // =============================================================
 
@@ -185,7 +183,11 @@ public:
         instance.instanceId = instance_id;
         instance.visibilityMask = 255;
         instance.flags = OPTIX_INSTANCE_FLAG_NONE;
-        m_shapegroup->optix_gas_handle(context, instance.traversableHandle, instance.sbtOffset);
+        m_shapegroup->optix_accel_handle(context, instance.traversableHandle, instance.sbtOffset);
+    }
+
+    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord>&, OptixProgramGroup*) override {
+        /* no op */
     }
 #endif
 

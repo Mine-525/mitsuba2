@@ -16,14 +16,13 @@ extern "C" __global__ void __intersection__rectangle() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixRectangleData *rect = (OptixRectangleData *)sbt_data->data;
 
-    Vector3f ray_o = make_vector3f(optixGetObjectRayOrigin());
-    Vector3f ray_d = make_vector3f(optixGetObjectRayDirection());
+    // Ray in instance-space
+    Ray3f ray = get_ray_instance_space();
+    // Ray in object-space
+    ray = rect->to_object.transform_ray(ray);
 
-    ray_o = rect->to_object.transform_point(ray_o);
-    ray_d = rect->to_object.transform_vector(ray_d);
-
-    float t = -ray_o.z() / ray_d.z();
-    Vector3f local = fmaf(t, ray_d, ray_o);
+    float t = -ray.o.z() * ray.d_rcp.z();
+    Vector3f local = ray(t);
 
     if (abs(local.x()) <= 1.f && abs(local.y()) <= 1.f)
         optixReportIntersection(t, OPTIX_HIT_KIND_TRIANGLE_FRONT_FACE);
@@ -46,18 +45,15 @@ extern "C" __global__ void __closesthit__rectangle() {
         Vector3f dp_dv = rect->dp_dv;
         Vector3f ng = ns;
 
-        // Ray in world-space
-        Vector3f ray_o_ = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
-        Vector3f ray_d_ = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
-
+        // Ray in instance-space
+        Ray3f ray_ = get_ray_instance_space();
         // Ray in object-space
-        Vector3f ray_o = rect->to_object.transform_point(ray_o_);
-        Vector3f ray_d = rect->to_object.transform_vector(ray_d_);
+        Ray3f ray = rect->to_object.transform_ray(ray_);
 
-        float t = -ray_o.z() / ray_d.z();
-        Vector3f p = ray_o_ + ray_d_ * t;
+        float t = -ray.o.z() * ray.d_rcp.z();
+        Vector3f p = ray_(t);
 
-        Vector3f local = fmaf(t, ray_d, ray_o);
+        Vector3f local = ray(t);
         Vector2f uv = 0.5f * Vector2f(local.x(), local.y()) + 0.5f;
 
         write_output_params(params, launch_index,

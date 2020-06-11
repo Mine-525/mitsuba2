@@ -14,14 +14,13 @@ extern "C" __global__ void __intersection__disk() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixDiskData *disk = (OptixDiskData *)sbt_data->data;
 
-    Vector3f ray_o = make_vector3f(optixGetObjectRayOrigin());
-    Vector3f ray_d = make_vector3f(optixGetObjectRayDirection());
+    // Ray in object-space
+    Ray3f ray = get_ray_instance_space();
+    // Ray in object-space
+    ray = disk->to_object.transform_ray(ray);
 
-    ray_o = disk->to_object.transform_point(ray_o);
-    ray_d = disk->to_object.transform_vector(ray_d);
-
-    float t = -ray_o.z() / ray_d.z();
-    Vector3f local = fmaf(t, ray_d, ray_o);
+    float t = -ray.o.z() * ray.d_rcp.z();
+    Vector3f local = ray(t);
 
     if (local.x() * local.x() + local.y() * local.y() <= 1.f)
         optixReportIntersection(t, OPTIX_HIT_KIND_TRIANGLE_FRONT_FACE);
@@ -40,16 +39,14 @@ extern "C" __global__ void __closesthit__disk() {
            very similar to Disk::fill_surface_interaction() */
 
         // Ray in object-space
-        Vector3f ray_o_ = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
-        Vector3f ray_d_ = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
+        Ray3f ray_ = get_ray_instance_space();
 
         // Ray in object-space
-        Vector3f ray_o = disk->to_object.transform_point(ray_o_);
-        Vector3f ray_d = disk->to_object.transform_vector(ray_d_);
+        Ray3f ray = disk->to_object.transform_ray(ray_);
 
-        float t = -ray_o.z() / ray_d.z();
+        float t = -ray.o.z() * ray.d_rcp.z();
 
-        Vector3f local = fmaf(t, ray_d, ray_o);
+        Vector3f local = ray(t);
 
         float r = norm(Vector2f(local.x(), local.y())),
               inv_r = 1.f / r;
@@ -67,7 +64,7 @@ extern "C" __global__ void __closesthit__disk() {
         Vector3f ns = normalize(disk->to_world.transform_normal(Vector3f(0.f, 0.f, 1.f)));
         Vector3f ng = ns;
         Vector2f uv = Vector2f(r, v);
-        Vector3f p = ray_o_ + ray_d_ * t;
+        Vector3f p = ray_(t);
 
         write_output_params(params, launch_index,
                             sbt_data->shape_ptr,

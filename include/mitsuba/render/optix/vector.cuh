@@ -231,6 +231,14 @@ DEVICE Array<Value, Size> fmaf(const Value &a, const Array<Value, Size> &b, cons
         result.v[i] = ::fmaf(a, b[i], c[i]);
     return result;
 }
+
+template <typename Value, size_t Size>
+DEVICE Array<Value, Size> frcp(const Array<Value, Size> &a) {
+    Array<Value, Size> result;
+    for (size_t i = 0; i < Size; ++i)
+        result.v[i] = 1.f / a[i];
+    return result;
+}
 #endif
 
 // Import some common Enoki types

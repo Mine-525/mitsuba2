@@ -9,7 +9,6 @@
 #include <mitsuba/render/shape.h>
 
 #if defined(MTS_ENABLE_OPTIX)
-    #include <mitsuba/render/optix_api.h>
     #include "optix/cylinder.cuh"
 #endif
 

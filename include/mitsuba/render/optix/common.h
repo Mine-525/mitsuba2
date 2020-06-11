@@ -2,6 +2,8 @@
 
 #ifdef __CUDACC__
 # include <optix.h>
+#else
+# include <mitsuba/render/optix_api.h>
 #endif
 
 #include <mitsuba/render/optix/bbox.cuh>
@@ -44,13 +46,21 @@ __device__ void write_output_params(OptixParams &params,
                                     unsigned int launch_index,
                                     unsigned long long shape_ptr,
                                     unsigned int prim_id,
-                                    const Vector3f &p,
-                                    const Vector2f &uv,
-                                    const Vector3f &ns,
-                                    const Vector3f &ng,
-                                    const Vector3f &dp_du,
-                                    const Vector3f &dp_dv,
+                                    Vector3f p,
+                                    Vector2f uv,
+                                    Vector3f ns,
+                                    Vector3f ng,
+                                    Vector3f dp_du,
+                                    Vector3f dp_dv,
                                     float t) {
+
+    if (optixGetInstanceId() != ~0u) {
+        p = make_vector3f(optixTransformPointFromObjectToWorldSpace(make_float3(p)));
+        ns = normalize(make_vector3f(optixTransformNormalFromObjectToWorldSpace(make_float3(ns))));
+        ng = normalize(make_vector3f(optixTransformNormalFromObjectToWorldSpace(make_float3(ng))));
+        dp_du = make_vector3f(optixTransformVectorFromObjectToWorldSpace(make_float3(dp_du)));
+        dp_dv = make_vector3f(optixTransformVectorFromObjectToWorldSpace(make_float3(dp_dv)));
+    }
 
     params.out_shape_ptr[launch_index] = shape_ptr;
     params.out_primitive_id[launch_index] = prim_id;

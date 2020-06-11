@@ -14,14 +14,15 @@ struct OptixSphereData {
 };
 
 #ifdef __CUDACC__
+
 extern "C" __global__ void __intersection__sphere() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixSphereData *sphere = (OptixSphereData *)sbt_data->data;
 
     float mint = optixGetRayTmin();
     float maxt = optixGetRayTmax();
-    Vector3f ray_o = make_vector3f(optixGetWorldRayOrigin());
-    Vector3f ray_d = make_vector3f(optixGetWorldRayDirection());
+    Vector3f ray_o = make_vector3f(optixGetObjectRayOrigin());
+    Vector3f ray_d = make_vector3f(optixGetObjectRayDirection());
 
     Vector3f o = ray_o - sphere->center;
     Vector3f d = ray_d;
@@ -58,8 +59,8 @@ extern "C" __global__ void __closesthit__sphere() {
         /* Compute and store information describing the intersection. This is
            very similar to Sphere::fill_surface_interaction() */
 
-        Vector3f ray_o = make_vector3f(optixGetWorldRayOrigin());
-        Vector3f ray_d = make_vector3f(optixGetWorldRayDirection());
+        Vector3f ray_o = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
+        Vector3f ray_d = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
         float t = optixGetRayTmax();
 
         Vector3f ns = normalize(fmaf(t, ray_d, ray_o) - sphere->center);
@@ -97,9 +98,9 @@ extern "C" __global__ void __closesthit__sphere() {
 
         if (sphere->flip_normals)
             ns = -ns;
-
+            
         Vector3f ng = ns;
-
+        
         write_output_params(params, launch_index,
                             sbt_data->shape_ptr,
                             optixGetPrimitiveIndex(),

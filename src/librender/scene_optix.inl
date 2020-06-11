@@ -193,8 +193,12 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
     // ---------------------------------
     //  Shader Binding Table generation
     // ---------------------------------
+    size_t shapes_count = 0;
+    for (Shape* shape: m_shapes)
+        shapes_count += shape->shape_count();
+    for (Shape* shape: m_shapegroups)
+        shapes_count += shape->shape_count();
 
-    size_t shapes_count = m_shapes.size();
     void* records = cuda_malloc(sizeof(RayGenSbtRecord) + sizeof(MissSbtRecord) + sizeof(HitGroupSbtRecord) * shapes_count);
 
     RayGenSbtRecord raygen_sbt;
@@ -213,22 +217,34 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
     uint32_t shape_index = 0;
     std::vector<HitGroupSbtRecord> hg_sbts(shapes_count);
 
-    // First process all the meshes, then the other shapes
-    for (size_t i = 0; i < 2; i++) {
-        for (Shape* shape: m_shapes) {
-            // true for meshes at 1st outer iteration
-            if (i == !shape->is_mesh()) {
-                size_t program_group_idx = (shape->is_mesh() ? 2 : 3 + get_shape_descr_idx(shape));
-                // Setup the hitgroup record and copy it to the hitgroup records array
-                rt_check(optixSbtRecordPackHeader(s.program_groups[program_group_idx], &hg_sbts[shape_index]));
-                // Prepare shape optix data and AABB
-                shape->optix_prepare_geometry();
-                // Set hitgroup record data
-                hg_sbts[shape_index].data.shape_ptr = (uintptr_t) shape;
-                hg_sbts[shape_index].data.data = shape->optix_hitgroup_data();
-                ++shape_index;
+    auto fetch_hitgroup_records = [&](std::vector<ref<Shape>> shapes) {
+        for (size_t i = 0; i < 2; i++) {
+            for (Shape* shape: shapes) {
+                // TODO: make this more uniform
+                if (shape->is_instance())
+                    continue;
+                // true for meshes at 1st outer iteration
+                if (i == !shape->is_mesh()) {
+                    size_t program_group_idx = (shape->is_mesh() ? 2 : 3 + get_shape_descr_idx(shape));
+                    // Setup the hitgroup record and copy it to the hitgroup records array
+                    rt_check(optixSbtRecordPackHeader(s.program_groups[program_group_idx], &hg_sbts[shape_index]));
+                    // Prepare shape optix data and AABB
+                    shape->optix_prepare_geometry();
+                    shape->optix_set_sbt_offset(shape_index);
+                    // Set hitgroup record data
+                    hg_sbts[shape_index].data.shape_ptr = (uintptr_t) shape;
+                    hg_sbts[shape_index].data.data = shape->optix_hitgroup_data();
+                    ++shape_index;
+                }
             }
         }
+    };
+
+    fetch_hitgroup_records(m_shapes);
+
+    for (Shape* shapegroup: m_shapegroups) {
+        shapegroup->optix_set_sbt_offset(shape_index);
+        fetch_hitgroup_records(shapegroup->shapes());
     }
 
     // Copy HitGroupRecords to the GPU
@@ -259,155 +275,7 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_parameters_changed_gpu() {
     OptixState &s = *(OptixState *) m_accel;
-
-    if (m_shapes.empty())
-        return;
-
-    // ----------------------------------------
-    //  Build GAS for meshes and custom shapes
-    // ----------------------------------------
-
-    std::vector<Shape*> shape_meshes, shape_others;
-    for (Shape* shape: m_shapes) {
-        if (shape->is_mesh())
-            shape_meshes.push_back(shape);
-        else
-            shape_others.push_back(shape);
-    }
-
-    OptixAccelBuildOptions accel_options = {};
-    accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION;
-    accel_options.operation  = OPTIX_BUILD_OPERATION_BUILD;
-    accel_options.motionOptions.numKeys = 0;
-
-    // Lambda function to build a GAS given a subset of shape pointers
-    auto build_gas = [&s, &accel_options](const std::vector<Shape*> &shape_subset, void* &output_buffer) {
-        if (output_buffer)
-            cuda_free((void*)output_buffer);
-
-        size_t shapes_count = shape_subset.size();
-
-        if (shapes_count == 0)
-            return OptixTraversableHandle(0);
-
-        std::vector<OptixBuildInput> build_inputs(shapes_count);
-        for (size_t i = 0; i < shapes_count; i++)
-            shape_subset[i]->optix_build_input(build_inputs[i]);
-
-        OptixAccelBufferSizes buffer_sizes;
-        rt_check(optixAccelComputeMemoryUsage(
-            s.context,
-            &accel_options,
-            build_inputs.data(),
-            (unsigned int) shapes_count,
-            &buffer_sizes
-        ));
-
-        void* d_temp_buffer = cuda_malloc(buffer_sizes.tempSizeInBytes);
-        output_buffer = cuda_malloc(buffer_sizes.outputSizeInBytes + 8);
-
-        OptixAccelEmitDesc emit_property = {};
-        emit_property.type   = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
-        emit_property.result = (CUdeviceptr)((char*)output_buffer + buffer_sizes.outputSizeInBytes);
-
-        OptixTraversableHandle accel;
-        rt_check(optixAccelBuild(
-            s.context,
-            0,              // CUDA stream
-            &accel_options,
-            build_inputs.data(),
-            (unsigned int) shapes_count, // num build inputs
-            (CUdeviceptr)d_temp_buffer,
-            buffer_sizes.tempSizeInBytes,
-            (CUdeviceptr)output_buffer,
-            buffer_sizes.outputSizeInBytes,
-            &accel,
-            &emit_property,  // emitted property list
-            1                // num emitted properties
-        ));
-
-        cuda_free((void*)d_temp_buffer);
-
-        size_t compact_size;
-        cuda_memcpy_from_device(&compact_size, (void*)emit_property.result, sizeof(size_t));
-        if (compact_size < buffer_sizes.outputSizeInBytes) {
-            void* compact_buffer = cuda_malloc(compact_size);
-            // Use handle as input and output
-            rt_check(optixAccelCompact(
-                s.context,
-                0, // CUDA stream
-                accel,
-                (CUdeviceptr)compact_buffer,
-                compact_size,
-                &accel
-            ));
-            cuda_free((void*)output_buffer);
-            output_buffer = compact_buffer;
-        }
-
-        return accel;
-    };
-
-    OptixTraversableHandle meshes_accel = build_gas(shape_meshes, s.accel_buffer_meshes);
-    OptixTraversableHandle others_accel = build_gas(shape_others, s.accel_buffer_others);
-
-    // ----------------------------------------------------------
-    //  Build IAS to support mixture of meshes and custom shapes
-    // ----------------------------------------------------------
-
-    if (!shape_others.empty() && shape_meshes.empty()) {
-        s.accel = others_accel;
-    } else if (shape_others.empty() && !shape_meshes.empty()) {
-        s.accel = meshes_accel;
-    } else {
-        // Create two empty instance with the identity transform
-        OptixInstance instances[2] = { {
-            { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 }, // transform
-            0,                                      // instanceId
-            0,                                      // sbtOffset
-            255,                                    // visibilityMask
-            OPTIX_INSTANCE_FLAG_DISABLE_TRANSFORM,  // flags
-            meshes_accel,                           // handle
-            { 0, 0 }                                // pad
-        } };
-        instances[1] = instances[0]; // duplicate the struct
-        instances[1].instanceId = 1;
-        instances[1].sbtOffset = (unsigned int) shape_meshes.size();
-        instances[1].traversableHandle = others_accel;
-
-        void* d_instances = cuda_malloc(2 * sizeof(OptixInstance));
-        cuda_memcpy_to_device(d_instances, &instances, 2 * sizeof(OptixInstance));
-
-        OptixBuildInput build_input;
-        build_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
-        build_input.instanceArray.instances = (CUdeviceptr) d_instances;
-        build_input.instanceArray.numInstances = 2;
-        build_input.instanceArray.aabbs = 0;
-        build_input.instanceArray.numAabbs = 0;
-
-        OptixAccelBufferSizes buffer_sizes;
-        rt_check(optixAccelComputeMemoryUsage(s.context, &accel_options, &build_input, 1, &buffer_sizes));
-
-        void* d_temp_buffer = cuda_malloc(buffer_sizes.tempSizeInBytes);
-        s.accel_buffer_ias  = cuda_malloc(buffer_sizes.outputSizeInBytes);
-
-        rt_check(optixAccelBuild(
-            s.context,
-            0,              // CUDA stream
-            &accel_options,
-            &build_input,
-            1,              // num build inputs
-            (CUdeviceptr)d_temp_buffer,
-            buffer_sizes.tempSizeInBytes,
-            (CUdeviceptr)s.accel_buffer_ias,
-            buffer_sizes.outputSizeInBytes,
-            &s.accel,
-            0,  // emitted property list
-            0   // num emitted properties
-        ));
-
-        cuda_free((void*)d_temp_buffer);
-    }
+    build_gas(m_shapes, s.context, 0, s.accel, s.accel_buffer_meshes, s.accel_buffer_others, s.accel_buffer_ias);
 }
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_release_gpu() {

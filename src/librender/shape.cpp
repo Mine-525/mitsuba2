@@ -10,10 +10,6 @@
     #include <embree3/rtcore.h>
 #endif
 
-#if defined(MTS_ENABLE_OPTIX)
-    #include <mitsuba/render/optix_api.h>
-#endif
-
 NAMESPACE_BEGIN(mitsuba)
 
 #if defined(MTS_ENABLE_EMBREE)
@@ -257,6 +253,12 @@ static const uint32_t optix_geometry_flags[1] = { OPTIX_GEOMETRY_FLAG_NONE };
 MTS_VARIANT void Shape<Float, Spectrum>::optix_prepare_geometry() {
     NotImplementedError("optix_prepare_geometry");
 }
+MTS_VARIANT void Shape<Float, Spectrum>::optix_prepare_instance(const OptixDeviceContext&, OptixInstance&, uint32_t) {
+    NotImplementedError("optix_prepare_instance");
+}
+MTS_VARIANT void Shape<Float, Spectrum>::optix_gas_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&) {
+    NotImplementedError("optix_gas_handle");
+}
 
 MTS_VARIANT void Shape<Float, Spectrum>::optix_build_input(OptixBuildInput &build_input) const {
     build_input.type = OPTIX_BUILD_INPUT_TYPE_CUSTOM_PRIMITIVES;
@@ -384,6 +386,15 @@ Shape<Float, Spectrum>::bbox(ScalarIndex index, const ScalarBoundingBox3f &clip)
 MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize
 Shape<Float, Spectrum>::primitive_count() const {
     return 1;
+}
+
+MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize
+Shape<Float, Spectrum>::shape_count() const {
+    return 1;
+}
+MTS_VARIANT std::vector<ref<Shape<Float, Spectrum>>>
+Shape<Float, Spectrum>::shapes() {
+    return { this };
 }
 
 MTS_VARIANT typename Shape<Float, Spectrum>::ScalarSize

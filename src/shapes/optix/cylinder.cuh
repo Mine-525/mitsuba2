@@ -20,8 +20,8 @@ extern "C" __global__ void __intersection__cylinder() {
 
     float mint = optixGetRayTmin();
     float maxt = optixGetRayTmax();
-    Vector3f ray_o = make_vector3f(optixGetWorldRayOrigin());
-    Vector3f ray_d = make_vector3f(optixGetWorldRayDirection());
+    Vector3f ray_o = make_vector3f(optixGetObjectRayOrigin());
+    Vector3f ray_d = make_vector3f(optixGetObjectRayDirection());
 
     ray_o = cylinder->to_object.transform_point(ray_o);
     ray_d = cylinder->to_object.transform_vector(ray_d);
@@ -72,8 +72,8 @@ extern "C" __global__ void __closesthit__cylinder() {
         /* Compute and store information describing the intersection. This is
            very similar to Cylinder::fill_surface_interaction() */
 
-        Vector3f ray_o = make_vector3f(optixGetWorldRayOrigin());
-        Vector3f ray_d = make_vector3f(optixGetWorldRayDirection());
+        Vector3f ray_o = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
+        Vector3f ray_d = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
         float t = optixGetRayTmax();
 
         Vector3f p = fmaf(t, ray_d, ray_o);

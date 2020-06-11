@@ -14,8 +14,8 @@ extern "C" __global__ void __intersection__disk() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixDiskData *disk = (OptixDiskData *)sbt_data->data;
 
-    Vector3f ray_o = make_vector3f(optixGetWorldRayOrigin());
-    Vector3f ray_d = make_vector3f(optixGetWorldRayDirection());
+    Vector3f ray_o = make_vector3f(optixGetObjectRayOrigin());
+    Vector3f ray_d = make_vector3f(optixGetObjectRayDirection());
 
     ray_o = disk->to_object.transform_point(ray_o);
     ray_d = disk->to_object.transform_vector(ray_d);
@@ -39,9 +39,9 @@ extern "C" __global__ void __closesthit__disk() {
         /* Compute and store information describing the intersection. This is
            very similar to Disk::fill_surface_interaction() */
 
-        // Ray in world-space
-        Vector3f ray_o_ = make_vector3f(optixGetWorldRayOrigin());
-        Vector3f ray_d_ = make_vector3f(optixGetWorldRayDirection());
+        // Ray in object-space
+        Vector3f ray_o_ = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
+        Vector3f ray_d_ = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));
 
         // Ray in object-space
         Vector3f ray_o = disk->to_object.transform_point(ray_o_);

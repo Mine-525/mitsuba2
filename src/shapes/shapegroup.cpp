@@ -6,6 +6,8 @@
 
 #if defined(MTS_ENABLE_EMBREE)
     #include <embree3/rtcore.h>
+#elif defined(MTS_ENABLE_OPTIX)
+    #include <mitsuba/render/optix/shapes.h>
 #endif
 
 NAMESPACE_BEGIN(mitsuba)
@@ -67,7 +69,7 @@ where only a few distinct types of trees have to be kept in memory. An example i
 template <typename Float, typename Spectrum>
 class ShapeGroup final: public Shape<Float, Spectrum> {
 public:
-    MTS_IMPORT_BASE(Shape, is_emitter, is_sensor, m_id, m_shapegroup)
+    MTS_IMPORT_BASE(Shape, is_emitter, is_sensor, m_id, m_shapegroup, m_sbt_offset)
     MTS_IMPORT_TYPES(ShapeKDTree)
 
     using typename Base::ScalarSize;
@@ -93,10 +95,11 @@ public:
                 if (shape->is_sensor())
                     Throw("Instancing of sensors is not supported");
                 else {
-#if defined(MTS_ENABLE_EMBREE)
+#if defined(MTS_ENABLE_EMBREE) || defined(MTS_ENABLE_OPTIX)
                     m_shapes.push_back(shape);
                     m_bbox.expand(shape->bbox());
-#else
+#endif
+#if !defined(MTS_ENABLE_EMBREE)
                     m_kdtree->add_shape(shape);
 #endif
                 }
@@ -200,6 +203,10 @@ public:
 
     ScalarFloat surface_area() const override { return 0.f; }
 
+    virtual ScalarSize shape_count() const override { return m_shapes.size(); }
+
+    virtual std::vector<ref<Base>> shapes() override { return m_shapes; }
+
     MTS_INLINE ScalarSize effective_primitive_count() const override { return 0; }
 
     std::string to_string() const override {
@@ -211,6 +218,15 @@ public:
         return oss.str();
     }
 
+#if defined(MTS_ENABLE_OPTIX)
+    virtual void optix_gas_handle(const OptixDeviceContext& context, OptixTraversableHandle &out_handle, uint32_t &out_sbt_offset) override {
+        if (m_accel == 0ull)
+            build_gas(m_shapes, context, m_sbt_offset, m_accel, m_accel_buffer_meshes, m_accel_buffer_others, m_accel_buffer_ias);
+        out_handle = m_accel;
+        out_sbt_offset = m_sbt_offset;
+    }
+#endif
+
     MTS_DECLARE_CLASS()
 private:
     ScalarBoundingBox3f m_bbox;
@@ -220,6 +236,13 @@ private:
         std::vector<ref<Base>> m_shapes;
     #else
         ref<ShapeKDTree> m_kdtree;
+    #endif
+    #if defined(MTS_ENABLE_OPTIX)
+        std::vector<ref<Base>> m_shapes;
+        OptixTraversableHandle m_accel = 0ull;
+        void* m_accel_buffer_meshes;
+        void* m_accel_buffer_others;
+        void* m_accel_buffer_ias;
     #endif
 };
 

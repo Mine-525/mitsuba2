@@ -44,7 +44,7 @@ details on how to create instances, refer to the :ref:`shape-shapegroup` plugin.
 template <typename Float, typename Spectrum>
 class Instance final: public Shape<Float, Spectrum> {
 public:
-    MTS_IMPORT_BASE(Shape, is_shapegroup, m_id, m_to_world, m_to_object)
+    MTS_IMPORT_BASE(Shape, is_shapegroup, m_id, m_to_world, m_to_object, m_instance)
     MTS_IMPORT_TYPES(BSDF)
 
     using typename Base::ScalarSize;
@@ -55,19 +55,21 @@ public:
         m_to_world = props.transform("to_world", ScalarTransform4f());
         m_to_object = m_to_world.inverse();
 
-      for (auto &kv : props.objects()) {
-          Base *shape = dynamic_cast<Base *>(kv.second.get());
-          if (shape && shape->is_shapegroup()) {
-              if (m_shapegroup)
-                Throw("Only a single shapegroup can be specified per instance.");
-              m_shapegroup = shape;
-          } else {
-                Throw("Only a shapegroup can be specified in an instance.");
-          }
-      }
+        for (auto &kv : props.objects()) {
+            Base *shape = dynamic_cast<Base *>(kv.second.get());
+            if (shape && shape->is_shapegroup()) {
+                if (m_shapegroup)
+                    Throw("Only a single shapegroup can be specified per instance.");
+                m_shapegroup = shape;
+            } else {
+                    Throw("Only a shapegroup can be specified in an instance.");
+            }
+        }
 
-      if (!m_shapegroup)
-          Throw("A reference to a 'shapegroup' must be specified!");
+        if (!m_shapegroup)
+            Throw("A reference to a 'shapegroup' must be specified!");
+
+        m_instance = true;
     }
 
     ScalarBoundingBox3f bbox() const override {
@@ -88,6 +90,8 @@ public:
     ScalarSize effective_primitive_count() const override {
         return m_shapegroup->primitive_count();
     }
+
+    virtual ScalarSize shape_count() const override { return 0; }
 
     //! @}
     // =============================================================
@@ -166,6 +170,22 @@ public:
         } else {
             Throw("embree_geometry() should only be called in CPU mode.");
         }
+    }
+#endif
+
+#if defined(MTS_ENABLE_OPTIX)
+    virtual void optix_prepare_instance(const OptixDeviceContext& context, OptixInstance& instance, uint32_t instance_id) override {
+        // TODO: check coeffs
+        float transform[12] = {
+            m_to_world.matrix(0, 0), m_to_world.matrix(0, 1), m_to_world.matrix(0, 2), m_to_world.matrix(0, 3),
+            m_to_world.matrix(1, 0), m_to_world.matrix(1, 1), m_to_world.matrix(1, 2), m_to_world.matrix(1, 3),
+            m_to_world.matrix(2, 0), m_to_world.matrix(2, 1), m_to_world.matrix(2, 2), m_to_world.matrix(2, 3)
+        };
+        std::memcpy(instance.transform, transform, sizeof(float) * 12);
+        instance.instanceId = instance_id;
+        instance.visibilityMask = 255;
+        instance.flags = OPTIX_INSTANCE_FLAG_NONE;
+        m_shapegroup->optix_gas_handle(context, instance.traversableHandle, instance.sbtOffset);
     }
 #endif
 

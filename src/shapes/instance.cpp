@@ -173,7 +173,6 @@ public:
 
 #if defined(MTS_ENABLE_OPTIX)
     virtual void optix_prepare_instance(const OptixDeviceContext& context, OptixInstance& instance, uint32_t instance_id) override {
-        // TODO: check coeffs
         float transform[12] = {
             m_to_world.matrix(0, 0), m_to_world.matrix(0, 1), m_to_world.matrix(0, 2), m_to_world.matrix(0, 3),
             m_to_world.matrix(1, 0), m_to_world.matrix(1, 1), m_to_world.matrix(1, 2), m_to_world.matrix(1, 3),

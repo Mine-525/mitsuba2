@@ -15,7 +15,7 @@ extern "C" __global__ void __intersection__disk() {
     OptixDiskData *disk = (OptixDiskData *)sbt_data->data;
 
     // Ray in object-space
-    Ray3f ray = get_ray_instance_space();
+    Ray3f ray = get_object_ray();
     // Ray in object-space
     ray = disk->to_object.transform_ray(ray);
 
@@ -39,7 +39,7 @@ extern "C" __global__ void __closesthit__disk() {
            very similar to Disk::fill_surface_interaction() */
 
         // Ray in object-space
-        Ray3f ray_ = get_ray_instance_space();
+        Ray3f ray_ = get_object_ray();
 
         // Ray in object-space
         Ray3f ray = disk->to_object.transform_ray(ray_);

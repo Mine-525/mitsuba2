@@ -7,12 +7,12 @@
 namespace optix {
 
 struct Ray3f {
-    Vector3f o;       ///< Ray origin
-    Vector3f d;       ///< Ray direction
-    Vector3f d_rcp;   ///< Componentwise reciprocals of the ray direction
-    float mint;     ///< Minimum position on the ray segment
-    float maxt;     ///< Maximum position on the ray segment
-    float time;     ///< Time value associated with this ray
+    Vector3f o;         ///< Ray origin
+    Vector3f d;         ///< Ray direction
+    Vector3f d_rcp;     ///< Componentwise reciprocals of the ray direction
+    float mint;         ///< Minimum position on the ray segment
+    float maxt;         ///< Maximum position on the ray segment
+    float time;         ///< Time value associated with this ray
 
     DEVICE Ray3f() {}
 
@@ -27,7 +27,8 @@ struct Ray3f {
     DEVICE void update() { d_rcp = frcp(d); }
 };
 
-DEVICE Ray3f get_ray_instance_space() {
+/// Returns the current ray in object space, based on the current instance transformation
+DEVICE Ray3f get_object_ray() {
     Ray3f ray;
     ray.o = make_vector3f(optixTransformPointFromWorldToObjectSpace(optixGetWorldRayOrigin()));
     ray.d = make_vector3f(optixTransformVectorFromWorldToObjectSpace(optixGetWorldRayDirection()));

@@ -52,10 +52,13 @@ template <typename Shape>
 void fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records,
                            std::vector<ref<Shape>> &shapes,
                            OptixProgramGroup *program_groups) {
-    for (size_t i = 0; i < 2; i++)
-        for (Shape* shape: shapes)
+    for (size_t i = 0; i < 2; i++) {
+        for (Shape* shape: shapes) {
+            // This trick allows meshes to be processed first
             if (i == !shape->is_mesh())
                 shape->optix_fill_hitgroup_records(hitgroup_records, program_groups);
+        }
+    }
 }
 
 template <typename Shape>
@@ -216,9 +219,8 @@ void build_gas(std::vector<ref<Shape>> &shapes,
 
         OptixAccelBufferSizes buffer_sizes;
         rt_check(optixAccelComputeMemoryUsage(context, &accel_options, &build_input, 1, &buffer_sizes));
-
         void* d_temp_buffer = cuda_malloc(buffer_sizes.tempSizeInBytes);
-        accel.buffer_ias  = cuda_malloc(buffer_sizes.outputSizeInBytes);
+        accel.buffer_ias    = cuda_malloc(buffer_sizes.outputSizeInBytes);
 
         rt_check(optixAccelBuild(
             context,

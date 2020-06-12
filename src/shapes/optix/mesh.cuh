@@ -85,7 +85,7 @@ extern "C" __global__ void __closesthit__mesh() {
             }
         }
 
-        Ray3f ray = get_ray_instance_space();
+        Ray3f ray = get_object_ray();
         float t = sqrt(squared_norm(p - ray.o) / squared_norm(ray.d));
 
         write_output_params(params, launch_index,

@@ -17,7 +17,7 @@ extern "C" __global__ void __intersection__rectangle() {
     OptixRectangleData *rect = (OptixRectangleData *)sbt_data->data;
 
     // Ray in instance-space
-    Ray3f ray = get_ray_instance_space();
+    Ray3f ray = get_object_ray();
     // Ray in object-space
     ray = rect->to_object.transform_ray(ray);
 
@@ -46,7 +46,7 @@ extern "C" __global__ void __closesthit__rectangle() {
         Vector3f ng = ns;
 
         // Ray in instance-space
-        Ray3f ray_ = get_ray_instance_space();
+        Ray3f ray_ = get_object_ray();
         // Ray in object-space
         Ray3f ray = rect->to_object.transform_ray(ray_);
 

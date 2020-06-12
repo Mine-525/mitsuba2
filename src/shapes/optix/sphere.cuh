@@ -19,7 +19,7 @@ extern "C" __global__ void __intersection__sphere() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixSphereData *sphere = (OptixSphereData *)sbt_data->data;
 
-    Ray3f ray = get_ray_instance_space();
+    Ray3f ray = get_object_ray();
 
     Vector3f o = ray.o - sphere->center;
     Vector3f d = ray.d;
@@ -56,7 +56,7 @@ extern "C" __global__ void __closesthit__sphere() {
         /* Compute and store information describing the intersection. This is
            very similar to Sphere::fill_surface_interaction() */
 
-        Ray3f ray = get_ray_instance_space();
+        Ray3f ray = get_object_ray();
 
         Vector3f ns = normalize(ray(ray.maxt) - sphere->center);
 

@@ -18,7 +18,7 @@ extern "C" __global__ void __intersection__cylinder() {
     const OptixHitGroupData *sbt_data = (OptixHitGroupData*) optixGetSbtDataPointer();
     OptixCylinderData *cylinder = (OptixCylinderData *)sbt_data->data;
 
-    Ray3f ray = get_ray_instance_space();
+    Ray3f ray = get_object_ray();
     // Ray in object-space
     ray = cylinder->to_object.transform_ray(ray);
 
@@ -68,7 +68,7 @@ extern "C" __global__ void __closesthit__cylinder() {
         /* Compute and store information describing the intersection. This is
            very similar to Cylinder::fill_surface_interaction() */
 
-        Ray3f ray = get_ray_instance_space();
+        Ray3f ray = get_object_ray();
         Vector3f p = ray(ray.maxt);
 
         Vector3f local = cylinder->to_object.transform_point(p);

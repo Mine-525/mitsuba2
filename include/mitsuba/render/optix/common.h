@@ -43,10 +43,12 @@ struct OptixParams {
 
     unsigned long long *out_shape_ptr;
     unsigned int *out_primitive_id;
+    unsigned int *out_instance_id;
 
     bool *out_hit;
 
     OptixTraversableHandle handle;
+    unsigned int max_instance_id;
 };
 
 #ifdef __CUDACC__
@@ -67,9 +69,9 @@ __device__ void write_output_params(OptixParams &params,
                                     Vector3f dp_du,
                                     Vector3f dp_dv,
                                     float t) {
-
+    unsigned int instance_index = optixGetInstanceId();
     // Transform inputs if the object is inside an instance
-    if (optixGetInstanceId() != ~0u) {
+    if (instance_index < params.max_instance_id) {
         float m[12], inv[12];
         optixGetObjectToWorldTransformMatrix(m);
         optixGetWorldToObjectTransformMatrix(inv);
@@ -82,8 +84,9 @@ __device__ void write_output_params(OptixParams &params,
         dp_dv = to_world.transform_vector(dp_dv);
     }
 
-    params.out_shape_ptr[launch_index] = shape_ptr;
+    params.out_shape_ptr[launch_index]    = shape_ptr;
     params.out_primitive_id[launch_index] = prim_id;
+    params.out_instance_id[launch_index]  = instance_index;
 
     params.out_u[launch_index] = uv.x();
     params.out_v[launch_index] = uv.y();

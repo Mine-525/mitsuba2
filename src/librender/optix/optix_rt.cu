@@ -56,6 +56,7 @@ extern "C" __global__ void __miss__ms() {
     } else {
         params.out_shape_ptr[launch_index] = 0;
         params.out_t[launch_index] = CUDART_INF_F;
+        params.out_instance_id[launch_index] = params.max_instance_id;
     }
 }
 

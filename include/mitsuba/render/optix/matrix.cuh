@@ -125,8 +125,7 @@ struct Transform4f {
 #else
     DEVICE Transform4f() { }
 
-    DEVICE Transform4f(float m[12], float inv[12])
-    {
+    DEVICE Transform4f(float m[12], float inv[12]) {
         for (size_t i = 0; i < 3; ++i)
             for (size_t j = 0; j < 4; ++j)
                 matrix[j][i] = m[i*4 + j];

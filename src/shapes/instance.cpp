@@ -5,6 +5,7 @@
 #include <mitsuba/core/transform.h>
 #include <mitsuba/render/interaction.h>
 #include <mitsuba/render/bsdf.h>
+#include "shapegroup.h"
 
 #if defined(MTS_ENABLE_EMBREE)
     #include <embree3/rtcore.h>
@@ -44,10 +45,11 @@ details on how to create instances, refer to the :ref:`shape-shapegroup` plugin.
 template <typename Float, typename Spectrum>
 class Instance final: public Shape<Float, Spectrum> {
 public:
-    MTS_IMPORT_BASE(Shape, is_shapegroup, m_id, m_to_world, m_to_object, m_instance)
+    MTS_IMPORT_BASE(Shape, m_id, m_to_world, m_to_object)
     MTS_IMPORT_TYPES(BSDF)
 
     using typename Base::ScalarSize;
+    using ShapeGroup = ShapeGroup<Float, Spectrum>;
 
     Instance(const Properties &props) {
         m_id = props.id();
@@ -60,7 +62,7 @@ public:
             if (shape && shape->is_shapegroup()) {
                 if (m_shapegroup)
                     Throw("Only a single shapegroup can be specified per instance.");
-                m_shapegroup = shape;
+                m_shapegroup = (ShapeGroup*)shape;
             } else {
                     Throw("Only a shapegroup can be specified in an instance.");
             }
@@ -68,8 +70,6 @@ public:
 
         if (!m_shapegroup)
             Throw("A reference to a 'shapegroup' must be specified!");
-
-        m_instance = true;
     }
 
     ScalarBoundingBox3f bbox() const override {
@@ -157,8 +157,16 @@ public:
     //! @}
     // =============================================================
 
+    std::string to_string() const override {
+        std::ostringstream oss;
+            oss << "Instance[" << std::endl
+                << "  shapegroup = " << string::indent(m_shapegroup) << std::endl
+                << "]";
+        return oss.str();
+    }
+
 #if defined(MTS_ENABLE_EMBREE)
-    RTCGeometry embree_geometry(RTCDevice device) const override {
+    RTCGeometry embree_geometry(RTCDevice device) override {
         if constexpr (!is_cuda_array_v<Float>) {
             RTCGeometry instance = m_shapegroup->embree_geometry(device);
             rtcSetGeometryTimeStepCount(instance, 1);
@@ -182,7 +190,7 @@ public:
         instance.instanceId = instance_id;
         instance.visibilityMask = 255;
         instance.flags = OPTIX_INSTANCE_FLAG_NONE;
-        m_shapegroup->optix_accel_handle(context, instance.traversableHandle, instance.sbtOffset);
+        m_shapegroup->optix_accel_handle(context, instance);
     }
 
     virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord>&, OptixProgramGroup*) override {
@@ -192,7 +200,7 @@ public:
 
     MTS_DECLARE_CLASS()
 private:
-   ref<Base> m_shapegroup;
+   ref<ShapeGroup> m_shapegroup;
 };
 
 MTS_IMPLEMENT_CLASS_VARIANT(Instance, Shape)

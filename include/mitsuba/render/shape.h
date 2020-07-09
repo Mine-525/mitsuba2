@@ -7,8 +7,7 @@
 #include <enoki/stl.h>
 
 #if defined(MTS_ENABLE_OPTIX)
-# include <mitsuba/render/optix/common.h>
-# include <mitsuba/render/optix/shapes.h>
+#  include <mitsuba/render/optix/common.h>
 #endif
 
 NAMESPACE_BEGIN(mitsuba)
@@ -327,13 +326,13 @@ public:
     std::string id() const override;
 
     /// Is this shape a triangle mesh?
-    bool is_mesh() const { return m_mesh; }
+    bool is_mesh() const { return class_()->derives_from(Mesh<Float, Spectrum>::m_class); }
 
     /// Is this shape a shapegroup?
-    bool is_shapegroup() const { return m_shapegroup; };
+    bool is_shapegroup() const { return class_()->name() == "ShapeGroup"; };
 
     /// Is this shape an instance?
-    bool is_instance() const { return m_instance; };
+    bool is_instance() const { return class_()->name() == "Instance"; };
 
     /// Does the surface of this shape mark a medium transition?
     bool is_medium_transition() const { return m_interior_medium.get() != nullptr ||
@@ -383,26 +382,79 @@ public:
      */
     virtual ScalarSize effective_primitive_count() const;
 
-
 #if defined(MTS_ENABLE_EMBREE)
     /// Return the Embree version of this shape
-    virtual RTCGeometry embree_geometry(RTCDevice device) const;
-    /// Build the embree scene in the shapegroup
-    virtual void init_embree_scene(RTCDevice device);
-    /// Release the embree scene in the shapegroup
-    virtual void release_embree_scene();
+    virtual RTCGeometry embree_geometry(RTCDevice device);
 #endif
 
 #if defined(MTS_ENABLE_OPTIX)
-    /// Prepare OptiX data buffers
+    /**
+     * \brief Populates the GPU data buffer, used in the Optix Hitgroup sbt records.
+     *
+     * \remark Actual implementations of this method should allocate the field
+     *         \ref m_optix_data_ptr on the GPU and populate it with the Optix
+     *         representation of the class.
+     *
+     * The default implementation throws an exception.
+     */
     virtual void optix_prepare_geometry();
-    /// Fill the OptixBuildInput struct
-    virtual void optix_build_input(OptixBuildInput&) const;
-    /// Prepare OptiX instance (only for instance)
-    virtual void optix_prepare_instance(const OptixDeviceContext&, OptixInstance&, uint32_t);
-    /// Prepare OptiX acceleration structure handle
-    virtual void optix_accel_handle(const OptixDeviceContext&, OptixTraversableHandle&, uint32_t&);
-    /// Fill the OptiX hitgroup recrods associated with this shape (may be recursive in the case of shape groups)
+    
+    /**
+     * \brief Fills the OptixBuildInput associated with this shape.
+     *
+     * \param build_input
+     *     A reference to the build input to be filled. The field build_input.type
+     *     has to be set, along with the associated members. For now, Mistuba only
+     *     supports the types \ref OPTIX_BUILD_INPUT_TYPE_CUSTOM_PRIMITIVES and
+     *     \ref OPTIX_BUILD_INPUT_TYPE_TRIANGLES.
+     *
+     * The default implementation assumes that an implicit Shape (custom primitive
+     * build type) is begin constructed, with its GPU data stored at \ref m_optix_data_ptr.
+     */
+    virtual void optix_build_input(OptixBuildInput& build_input) const;
+
+    /**
+     * \brief Prepares and fills the OptixInstance associated with this shape. This
+     *        process includes generating the Optix acceleration data structure
+     *        represented by this shape, and populating the OptixInstance struct.
+     *
+     * \remark This method is currently implemented for the \ref Instance plugin.
+     *
+     * \param context
+     *     The Optix context that was used to construct the rest of the scene's
+     *     Optix representation.
+     *
+     * \param instance
+     *     The OptixInstance to be filled.
+     *
+     * \param instance_id
+     *     The instance id, used internally inside Optix to detect when a Shape is
+     *     part of an Instance.
+     *
+     * The default implementation throws an exception.
+     */
+    virtual void optix_prepare_instance(const OptixDeviceContext& context, OptixInstance& instance, uint32_t instance_id);
+
+    /**
+     * \brief Creates and appends the HitGroupSbtRecord(s) associated with this
+     *        shape to the provided array.
+     *
+     * \remark This method can append multiple hitgroup records to the array
+     *         (see the \ref Shapegroup plugin for an example).
+     *
+     * \param hitgroup_records
+     *     The array of hitgroup records where the new HitGroupRecords should be
+     *     appended.
+     *
+     * \param program_groups
+     *     The array of available program groups (used to pack the Optix header at
+     *     the beginning of the record).
+     *
+     * The default implementation creates a new HitGroupSbtRecord and fills its \ref data
+     * field with \ref m_optix_data_ptr. It then calls \ref optixSbtRecordPackHeader
+     * with one of the OptixProgramGroup of the \ref program_groups array (the actual program
+     * group index is infered by the type of the Shape, see \ref get_shape_descr_idx()).
+     */
     virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records, OptixProgramGroup *program_groups);
 #endif
 
@@ -425,9 +477,6 @@ protected:
     void set_children();
     std::string get_children_string() const;
 protected:
-    bool m_mesh = false;
-    bool m_shapegroup = false;
-    bool m_instance = false;
     ref<BSDF> m_bsdf;
     ref<Emitter> m_emitter;
     ref<Sensor> m_sensor;

@@ -28,11 +28,8 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_cpu(const Properties &/*prop
 
     Timer timer;
     RTCScene embree_scene = rtcNewScene(__embree_device);
-    rtcSetSceneFlags(embree_scene,RTC_SCENE_FLAG_DYNAMIC);
+    rtcSetSceneFlags(embree_scene, RTC_SCENE_FLAG_DYNAMIC);
     m_accel = embree_scene;
-
-    for (Shape *shapegroup : m_shapegroups)
-        shapegroup->init_embree_scene(__embree_device);
 
     for (Shape *shape : m_shapes)
          rtcAttachGeometry(embree_scene, shape->embree_geometry(__embree_device));
@@ -42,8 +39,6 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_cpu(const Properties &/*prop
 }
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_release_cpu() {
-    for (Shape *shapegroup : m_shapegroups)
-        shapegroup->release_embree_scene();
     rtcReleaseScene((RTCScene) m_accel);
 }
 
@@ -83,20 +78,13 @@ Scene<Float, Spectrum>::ray_intersect_cpu(const Ray3f &ray, Mask active) const {
                 si.wavelengths = ray.wavelengths;
                 si.prim_index = prim_index;
 
+                // Create the cache for the Mesh shape
+                Float cache[3] = { rh.hit.u, rh.hit.v, (Float) shape_index };
                 // If the hit is not on an instance
-                if( inst_index == RTC_INVALID_GEOMETRY_ID ) {
-                    // If the hit is not on an instance
-                    si.shape = m_shapes[shape_index];
-                    // Create the cache for the Mesh shape
-                    Float cache[2] = { rh.hit.u, rh.hit.v };
-                    // Ask shape to fill in the rest
-                    si.shape->fill_surface_interaction(ray, cache, si);
-                } else {
-                    // If the hit is on an instance
-                    si.instance = m_shapes[inst_index];
-                    Float cache[3] = { rh.hit.u, rh.hit.v, (Float) shape_index };
-                    si.instance->fill_surface_interaction(ray, cache, si);
-                }
+                if (inst_index == RTC_INVALID_GEOMETRY_ID)
+                    m_shapes[shape_index]->fill_surface_interaction(ray, cache, si);
+                else
+                    m_shapes[inst_index]->fill_surface_interaction(ray, cache, si);
 
                 // Gram-schmidt orthogonalization to compute local shading frame
                 si.sh_frame.s = normalize(

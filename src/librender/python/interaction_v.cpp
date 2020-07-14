@@ -217,29 +217,6 @@ MTS_PY_EXPORT(MediumInteraction) {
 MTS_PY_EXPORT(PreliminaryIntersection) {
     MTS_PY_IMPORT_TYPES_DYNAMIC()
 
-#define def_flag(flag) value(#flag, HitComputeFlags::flag, D(HitComputeFlags, flag))
-
-    py::enum_<HitComputeFlags>(m, "HitComputeFlags", py::arithmetic())
-        .def_flag(None)
-        .def_flag(Minimal)
-        .def_flag(UV)
-        .def_flag(DPDUV)
-        .def_flag(ShadingFrame)
-        .def_flag(Automatic)
-        .def_flag(NonDifferentiable)
-        .def_flag(Differentiable)
-        .def_flag(All)
-        .def_flag(AllNonDifferentiable)
-        .def_flag(AllDifferentiable)
-        .def(py::self | py::self)
-        .def(int() | py::self)
-        .def(py::self & py::self)
-        .def(int() & py::self);
-
-#undef def_flag
-
-    m.def("has_flag", [](HitComputeFlags f0, HitComputeFlags f1) { return has_flag(f0, f1); });
-
     auto inter =
         py::class_<PreliminaryIntersection3f>(m, "PreliminaryIntersection3f",
                                               D(PreliminaryIntersection))

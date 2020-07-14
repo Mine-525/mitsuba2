@@ -464,8 +464,6 @@ enum class HitComputeFlags : uint32_t {
 
     /// Compute all fields of the surface interaction data structure in a differentiable way
     AllDifferentiable    = UV | DPDUV | ShadingFrame | Differentiable,
-
-    // TODO add mode for detaching `prim_uv` when differentiable
 };
 
 constexpr uint32_t operator |(HitComputeFlags f1, HitComputeFlags f2)  { return (uint32_t) f1 | (uint32_t) f2; }

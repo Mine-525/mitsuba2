@@ -239,6 +239,14 @@ DEVICE Array<Value, Size> frcp(const Array<Value, Size> &a) {
         result.v[i] = __frcp_rn(a[i]);
     return result;
 }
+
+template <typename Value, size_t Size>
+DEVICE Array<Value, Size> frcp(const Array<Value, Size> &a) {
+    Array<Value, Size> result;
+    for (size_t i = 0; i < Size; ++i)
+        result.v[i] = 1.f / a[i];
+    return result;
+}
 #endif
 
 // Import some common Enoki types

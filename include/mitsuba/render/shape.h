@@ -334,6 +334,12 @@ public:
     /// Is this shape an instance?
     bool is_instance() const { return class_()->name() == "Instance"; };
 
+    /// Is this shape a shapegroup?
+    bool is_shapegroup() const { return m_shapegroup; };
+
+    /// Is this shape an instance?
+    bool is_instance() const { return m_instance; };
+
     /// Does the surface of this shape mark a medium transition?
     bool is_medium_transition() const { return m_interior_medium.get() != nullptr ||
                                                m_exterior_medium.get() != nullptr; }
@@ -381,6 +387,7 @@ public:
      * the same value as \ref primitive_count().
      */
     virtual ScalarSize effective_primitive_count() const;
+
 
 #if defined(MTS_ENABLE_EMBREE)
     /// Return the Embree version of this shape

@@ -146,7 +146,7 @@ void embree_intersect_scalar(int* valid,
 
     // Check whether this is a shadow ray or not
     if (rtc_hit) {
-        auto pi = shape->ray_intersect(ray);
+        auto pi = shape->ray_intersect_preliminary(ray);
         if (pi.is_valid()) {
             rtc_ray->tfar = pi.t;
             rtc_hit->geomID = geomID;
@@ -189,7 +189,7 @@ void embree_intersect_packet(int* valid,
 
     // Check whether this is a shadow ray or not
     if (hits) {
-        auto pi = shape->ray_intersect(ray, active);
+        auto pi = shape->ray_intersect_preliminary(ray, active);
         active &= pi.is_valid();
         store(rays->tfar,   pi.t, active);
         store(hits->geomID, Int(geomID), active);
@@ -293,14 +293,14 @@ MTS_VARIANT Float Shape<Float, Spectrum>::pdf_direction(const Interaction3f & /*
 }
 
 MTS_VARIANT typename Shape<Float, Spectrum>::PreliminaryIntersection3f
-Shape<Float, Spectrum>::ray_intersect(const Ray3f & /*ray*/, Mask /*active*/) const {
-    NotImplementedError("ray_intersect");
+Shape<Float, Spectrum>::ray_intersect_preliminary(const Ray3f & /*ray*/, Mask /*active*/) const {
+    NotImplementedError("ray_intersect_preliminary");
 }
 
 MTS_VARIANT typename Shape<Float, Spectrum>::Mask
 Shape<Float, Spectrum>::ray_test(const Ray3f &ray, Mask active) const {
     MTS_MASK_ARGUMENT(active);
-    return ray_intersect(ray, active).is_valid();
+    return ray_intersect_preliminary(ray, active).is_valid();
 }
 
 MTS_VARIANT typename Shape<Float, Spectrum>::SurfaceInteraction3f
@@ -315,7 +315,7 @@ MTS_VARIANT typename Shape<Float, Spectrum>::SurfaceInteraction3f
 Shape<Float, Spectrum>::ray_intersect(const Ray3f &ray, HitComputeFlags flags, Mask active) const {
     MTS_MASK_ARGUMENT(active);
 
-    auto pi = ray_intersect(ray, active);
+    auto pi = ray_intersect_preliminary(ray, active);
     active &= pi.is_valid();
 
     return pi.compute_surface_interaction(ray, flags, active);

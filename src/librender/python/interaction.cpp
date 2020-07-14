@@ -21,6 +21,4 @@ MTS_PY_EXPORT(HitComputeFlags) {
         .def(int() & py::self)
         .def(+py::self)
         .def(~py::self);
-
-    m.def("has_flag", [](HitComputeFlags f0, HitComputeFlags f1) { return has_flag(f0, f1); });
 }

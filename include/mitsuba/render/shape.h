@@ -134,8 +134,8 @@ public:
      *    sizeof(Float[P])</tt> bytes) that must be supplied to cache
      *    information about the intersection.
      */
-    virtual PreliminaryIntersection3f ray_intersect(const Ray3f &ray,
-                                                    Mask active = true) const;
+    virtual PreliminaryIntersection3f ray_intersect_preliminary(const Ray3f &ray,
+                                                                Mask active = true) const;
 
     /**
      * \brief Fast ray shadow test
@@ -146,8 +146,8 @@ public:
      *
      * No details about the intersection are returned, hence the function is
      * only useful for visibility queries. For most shapes, the implementation
-     * will simply forward the call to \ref ray_intersect(). When the shape
-     * actually contains a nested kd-tree, some optimizations are possible.
+     * will simply forward the call to \ref ray_intersect_preliminary(). When
+     * the shape actually contains a nested kd-tree, some optimizations are possible.
      *
      * \param ray
      *     The ray to be tested for an intersection
@@ -157,8 +157,8 @@ public:
     // TODO update description
 
     /**
-     * \brief Given a surface intersection found by \ref ray_intersect(), fill
-     * a \ref SurfaceInteraction data structure with detailed information
+     * \brief Given a surface intersection found by \ref ray_intersect_preliminary(),
+     * fill a \ref SurfaceInteraction data structure with detailed information
      * describing the intersection.
      *
      * The implementation should fill in the fields \c p, \c uv, \c n, \c
@@ -170,7 +170,7 @@ public:
      */
     virtual SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
                                                              PreliminaryIntersection3f pi,
-                                                             HitComputeFlags flags,
+                                                             HitComputeFlags flags = HitComputeFlags::All,
                                                              Mask active = true) const;
 
     // TODO update description
@@ -187,7 +187,7 @@ public:
      *     Describe how the detailed information should be computed
      */
     SurfaceInteraction3f ray_intersect(const Ray3f &ray,
-                                       HitComputeFlags flags,
+                                       HitComputeFlags flags = HitComputeFlags::All,
                                        Mask active = true) const;
 
     //! @}

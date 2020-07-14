@@ -38,7 +38,7 @@ public:
                                        Mask active = true) const;
 
     SurfaceInteraction3f ray_intersect(const Ray3f &ray,
-                                       HitComputeFlags flags = HitComputeFlags::All,
+                                       HitComputeFlags flags,
                                        Mask active = true) const;
 
     PreliminaryIntersection3f ray_intersect_preliminary(const Ray3f &ray,

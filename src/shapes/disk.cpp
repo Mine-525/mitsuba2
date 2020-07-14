@@ -145,8 +145,8 @@ public:
     //! @{ \name Ray tracing routines
     // =============================================================
 
-    PreliminaryIntersection3f ray_intersect(const Ray3f &ray_,
-                                            Mask active) const override {
+    PreliminaryIntersection3f ray_intersect_preliminary(const Ray3f &ray_,
+                                                        Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
         Ray3f ray     = m_to_object.transform_affine(ray_);
@@ -187,7 +187,7 @@ public:
 
         // Recompute ray intersection to get differentiable prim_uv and t
         if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
-            pi = ray_intersect(ray, active);
+            pi = ray_intersect_preliminary(ray, active);
 
         active &= pi.is_valid();
 

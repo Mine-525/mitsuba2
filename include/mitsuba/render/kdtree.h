@@ -2066,8 +2066,8 @@ public:
     }
 
     template <bool ShadowRay>
-    MTS_INLINE PreliminaryIntersection3f ray_intersect(const Ray3f &ray,
-                                                       Mask active) const {
+    MTS_INLINE PreliminaryIntersection3f ray_intersect_preliminary(const Ray3f &ray,
+                                                                   Mask active) const {
         ENOKI_MARK_USED(active);
         if constexpr (!is_array_v<Float>)
             return ray_intersect_scalar<ShadowRay>(ray);
@@ -2382,7 +2382,7 @@ protected:
                 const Mesh *mesh = (const Mesh *) shape;
                 pi = mesh->ray_intersect_triangle(prim_index, ray, active);
             } else {
-                pi = shape->ray_intersect(ray, active);
+                pi = shape->ray_intersect_preliminary(ray, active);
             }
 
             pi.prim_index  = prim_index;

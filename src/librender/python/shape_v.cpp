@@ -24,13 +24,15 @@ MTS_PY_EXPORT(Shape) {
         .def("normal_derivative", vectorize(&Shape::normal_derivative),
             "si"_a, "shading_frame"_a = true, "active"_a = true,
             D(Shape, normal_derivative))
-        .def("ray_intersect",
-            vectorize(
-                py::overload_cast<const Ray3f &, Mask>(&Shape::ray_intersect, py::const_)),
-            "ray"_a, "active"_a = true, D(Shape, ray_intersect))
+        .def("ray_intersect_preliminary", vectorize(&Shape::ray_intersect_preliminary),
+             "ray"_a, "active"_a = true,
+             D(Shape, ray_intersect_preliminary))
+        .def("ray_intersect", vectorize(&Shape::ray_intersect),
+             "ray"_a, "flags"_a = HitComputeFlags::All, "active"_a = true,
+             D(Shape, ray_intersect))
         .def("ray_test", vectorize(&Shape::ray_test), "ray"_a, "active"_a = true)
         .def("compute_surface_interaction", &Shape::compute_surface_interaction,
-                "ray"_a, "pi"_a, "flags"_a, "active"_a = true)
+                "ray"_a, "pi"_a, "flags"_a = HitComputeFlags::All, "active"_a = true)
         .def("bbox", py::overload_cast<>(
             &Shape::bbox, py::const_), D(Shape, bbox))
         .def("bbox", py::overload_cast<ScalarUInt32>(

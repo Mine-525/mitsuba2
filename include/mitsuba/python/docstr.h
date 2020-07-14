@@ -5348,11 +5348,11 @@ static const char *__doc_mitsuba_ShapeKDTree_m_shapes = R"doc()doc";
 
 static const char *__doc_mitsuba_ShapeKDTree_primitive_count = R"doc(Return the number of registered primitives)doc";
 
-static const char *__doc_mitsuba_ShapeKDTree_ray_intersect = R"doc()doc";
-
 static const char *__doc_mitsuba_ShapeKDTree_ray_intersect_naive = R"doc(Brute force intersection routine for debugging purposes)doc";
 
 static const char *__doc_mitsuba_ShapeKDTree_ray_intersect_packet = R"doc()doc";
+
+static const char *__doc_mitsuba_ShapeKDTree_ray_intersect_preliminary = R"doc()doc";
 
 static const char *__doc_mitsuba_ShapeKDTree_ray_intersect_scalar = R"doc()doc";
 
@@ -5394,9 +5394,9 @@ static const char *__doc_mitsuba_Shape_bsdf_2 = R"doc(Return the shape's BSDF)do
 static const char *__doc_mitsuba_Shape_class = R"doc()doc";
 
 static const char *__doc_mitsuba_Shape_compute_surface_interaction =
-R"doc(Given a surface intersection found by ray_intersect(), fill a
-SurfaceInteraction data structure with detailed information describing
-the intersection.
+R"doc(Given a surface intersection found by ray_intersect_preliminary(),
+fill a SurfaceInteraction data structure with detailed information
+describing the intersection.
 
 The implementation should fill in the fields ``p``, ``uv``, ``n``,
 ``sh_frame``.n, ``dp_du``, and ``dp_dv``. The fields ``t``, ``time``,
@@ -5581,6 +5581,18 @@ Remark:
     The default implementation simply returns ``1``)doc";
 
 static const char *__doc_mitsuba_Shape_ray_intersect =
+R"doc(Test for an intersection and return detailed information
+
+This operation combines the prior ray_intersect_preliminary() and
+compute_surface_interaction() operations.
+
+Parameter ``ray``:
+    The ray to be tested for an intersection
+
+Parameter ``flags``:
+    Describe how the detailed information should be computed)doc";
+
+static const char *__doc_mitsuba_Shape_ray_intersect_preliminary =
 R"doc(Fast ray intersection test
 
 Efficiently test whether the shape is intersected by the given ray,
@@ -5599,16 +5611,6 @@ Parameter ``cache``:
     sizeof(Float[P])`` bytes) that must be supplied to cache
     information about the intersection.)doc";
 
-static const char *__doc_mitsuba_Shape_ray_intersect_2 =
-R"doc(Test for an intersection and return detailed information
-
-This operation combines the prior ray_intersect() and
-compute_surface_interaction() operations in case intersection with a
-single shape is desired.
-
-Parameter ``ray``:
-    The ray to be tested for an intersection)doc";
-
 static const char *__doc_mitsuba_Shape_ray_test =
 R"doc(Fast ray shadow test
 
@@ -5618,9 +5620,9 @@ the case.
 
 No details about the intersection are returned, hence the function is
 only useful for visibility queries. For most shapes, the
-implementation will simply forward the call to ray_intersect(). When
-the shape actually contains a nested kd-tree, some optimizations are
-possible.
+implementation will simply forward the call to
+ray_intersect_preliminary(). When the shape actually contains a nested
+kd-tree, some optimizations are possible.
 
 Parameter ``ray``:
     The ray to be tested for an intersection)doc";

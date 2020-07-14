@@ -217,6 +217,8 @@ MTS_PY_EXPORT(MediumInteraction) {
 MTS_PY_EXPORT(PreliminaryIntersection) {
     MTS_PY_IMPORT_TYPES_DYNAMIC()
 
+    m.def("has_flag", [](HitComputeFlags f0, HitComputeFlags f1) { return has_flag(f0, f1); });
+
     auto inter =
         py::class_<PreliminaryIntersection3f>(m, "PreliminaryIntersection3f",
                                               D(PreliminaryIntersection))

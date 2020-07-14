@@ -333,15 +333,23 @@ public:
     }
 
     SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                     const PreliminaryIntersection3f& pi,
-                                                     HitComputeFlags /*flags*/,
+                                                     PreliminaryIntersection3f pi,
+                                                     HitComputeFlags flags,
                                                      Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
+        // Recompute ray intersection to get differentiable prim_uv and t
+        if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
+            pi = ray_intersect(ray, active);
+
+        active &= pi.is_valid();
+
         SurfaceInteraction3f si = zero<SurfaceInteraction3f>();
+        si.t = select(active, pi.t, math::Infinity<Float>);
 
         si.p = ray(pi.t);
-        Vector3f local = m_to_object * si.p;
+
+        Vector3f local = m_to_object.transform_affine(si.p);
 
         Float phi = atan2(local.y(), local.x());
         masked(phi, phi < 0.f) += 2.f * math::Pi<Float>;

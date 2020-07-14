@@ -416,7 +416,7 @@ Mesh<Float, Spectrum>::eval_parameterization(const Point2f &uv,
 
     pi.shape = this;
 
-    return pi.compute_surface_interaction(ray, HitComputeFlags::AllAutomatic, active);
+    return pi.compute_surface_interaction(ray, HitComputeFlags::All, active);
 }
 
 MTS_VARIANT Float Mesh<Float, Spectrum>::pdf_position(const PositionSample3f &, Mask) const {
@@ -453,34 +453,23 @@ Mesh<Float, Spectrum>::barycentric_coordinates(const SurfaceInteraction3f &si,
 
 MTS_VARIANT typename Mesh<Float, Spectrum>::SurfaceInteraction3f
 Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
-                                                   const PreliminaryIntersection3f& pi_,
+                                                   PreliminaryIntersection3f pi,
                                                    HitComputeFlags flags,
                                                    Mask active) const {
     MTS_MASK_ARGUMENT(active);
 
-    // Check whether the SurfaceInteraction need to be differentiable w.t.r. m_vertex_positions_buf
-    // bool differentiable_pos = is_diff_array_v<Float> && requires_gradient(m_vertex_positions_buf); // TODO
     bool differentiable_pos = false;
+    if constexpr (is_diff_array_v<Float>)
+        differentiable_pos = requires_gradient(m_vertex_positions_buf);
 
-    PreliminaryIntersection3f pi = pi_;
-
-    if (differentiable_pos) { // TODO use cache
-        // Recompute ray / triangle intersection to get differentiable prim_uv and t
+    // Recompute ray intersection to get differentiable prim_uv and t
+    if (differentiable_pos && has_flag(flags, HitComputeFlags::Differentiable))
         pi = ray_intersect_triangle(pi.prim_index, ray, active);
 
-        // Kill the ray if we can't recompute the triangle intersection
-        // masked(t, !valid && active) = math::Infinity<Float>;
+    active &= pi.is_valid();
 
-        // Replace the data by differentiable data
-        active &= pi.is_valid();
-        // masked(t, active) = t; // TODO
-    }
-
-    // TODO ensure si.t is differentiable
-    // Float t  = pi.t;
-    Float b1 = pi.prim_uv[0];
-    Float b2 = pi.prim_uv[1];
-
+    Float b1 = pi.prim_uv.x();
+    Float b2 = pi.prim_uv.y();
     Float b0 = 1.f - b1 - b2;
 
     auto fi = face_indices(pi.prim_index, active);
@@ -492,8 +481,8 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
     Vector3f dp0 = p1 - p0,
              dp1 = p2 - p0;
 
-    SurfaceInteraction3f si = zero<SurfaceInteraction3f>(slices(active));
-    si.t = math::Infinity<Float>;
+    SurfaceInteraction3f si = zero<SurfaceInteraction3f>();
+    si.t = select(active, pi.t, math::Infinity<Float>);
 
     // Re-interpolate intersection using barycentric coordinates
     si.p = p0 * b0 + p1 * b1 + p2 * b2;
@@ -504,7 +493,7 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
     // Texture coordinates (if available)
     std::tie(si.dp_du, si.dp_dv) = coordinate_system(si.n);
     si.uv = Point2f(b1, b2);
-    if (has_vertex_texcoords()) {
+    if (has_vertex_texcoords() && likely(has_flag(flags, HitComputeFlags::UV))) {
         Point2f uv0 = vertex_texcoord(fi[0], active),
                 uv1 = vertex_texcoord(fi[1], active),
                 uv2 = vertex_texcoord(fi[2], active);
@@ -524,7 +513,7 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
     }
 
     // Shading normal (if available)
-    if (has_vertex_normals()) {
+    if (has_vertex_normals() && likely(has_flag(flags, HitComputeFlags::ShadingFrame))) {
         Normal3f n0 = vertex_normal(fi[0], active),
                  n1 = vertex_normal(fi[1], active),
                  n2 = vertex_normal(fi[2], active);

@@ -49,7 +49,7 @@ Scene<Float, Spectrum>::ray_intersect_naive_cpu(const Ray3f &ray, Mask active) c
     SurfaceInteraction3f si;
     if (likely(any(active))) {
         ScopedPhase sp(ProfilerPhase::CreateSurfaceInteraction);
-        si = pi.compute_surface_interaction(ray, HitComputeFlags::AllAutomatic, active);
+        si = pi.compute_surface_interaction(ray, HitComputeFlags::All, active);
     } else {
         si.wavelengths = ray.wavelengths;
         si.wi = -ray.d;

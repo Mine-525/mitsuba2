@@ -158,7 +158,7 @@ public:
                             Mask active = true) const;
 
     virtual SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                             const PreliminaryIntersection3f& pi,
+                                                             PreliminaryIntersection3f pi,
                                                              HitComputeFlags flags,
                                                              Mask active = true) const override;
 

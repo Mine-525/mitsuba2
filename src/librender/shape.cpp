@@ -150,6 +150,8 @@ void embree_intersect_scalar(int* valid,
         if (pi.is_valid()) {
             rtc_ray->tfar = pi.t;
             rtc_hit->geomID = geomID;
+            rtc_hit->u = pi.prim_uv.x();
+            rtc_hit->v = pi.prim_uv.y();
         }
     } else {
         if (shape->ray_test(ray))
@@ -189,8 +191,10 @@ void embree_intersect_packet(int* valid,
     if (hits) {
         auto pi = shape->ray_intersect(ray, active);
         active &= pi.is_valid();
-        store(rays->tfar, pi.t, active);
+        store(rays->tfar,   pi.t, active);
         store(hits->geomID, Int(geomID), active);
+        store(hits->u,      pi.prim_uv.x(), active);
+        store(hits->v,      pi.prim_uv.y(), active);
     } else {
         active &= shape->ray_test(ray);
         store(rays->tfar, Float(-math::Infinity<Float>), active);
@@ -301,7 +305,7 @@ Shape<Float, Spectrum>::ray_test(const Ray3f &ray, Mask active) const {
 
 MTS_VARIANT typename Shape<Float, Spectrum>::SurfaceInteraction3f
 Shape<Float, Spectrum>::compute_surface_interaction(const Ray3f & /*ray*/,
-                                                    const PreliminaryIntersection3f & /*pi*/,
+                                                    PreliminaryIntersection3f /*pi*/,
                                                     HitComputeFlags /*flags*/,
                                                     Mask /*active*/) const {
     NotImplementedError("compute_surface_interaction");

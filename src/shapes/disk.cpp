@@ -180,47 +180,41 @@ public:
     }
 
     SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                     const PreliminaryIntersection3f& pi,
-                                                     HitComputeFlags /*flags*/,
+                                                     PreliminaryIntersection3f pi,
+                                                     HitComputeFlags flags,
                                                      Mask active) const override {
         MTS_MASK_ARGUMENT(active);
-        #if defined(MTS_ENABLE_EMBREE)
-            // TODO
-            // cache = nullptr;
-        #endif
+
+        // Recompute ray intersection to get differentiable prim_uv and t
+        if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
+            pi = ray_intersect(ray, active);
+
+        active &= pi.is_valid();
 
         SurfaceInteraction3f si = zero<SurfaceInteraction3f>();
-        si.t = math::Infinity<Float>;
+        si.t = select(active, pi.t, math::Infinity<Float>);
 
-        Float local_x, local_y;
-        // if (cache) { // TODO use flags
-            local_x = pi.prim_uv[0];
-            local_y = pi.prim_uv[1];
-        // } else {
-        //     Ray3f ray_local = m_to_object.transform_affine(ray);
-        //     Float t = -ray_local.o.z() * ray_local.d_rcp.z();
-        //     Point3f local = ray_local(t);
-        //     local_x = local.x();
-        //     local_y = local.y();
-        // }
+        si.p = ray(pi.t);
 
-        Float r = norm(Point2f(local_x, local_y)),
-              inv_r = rcp(r);
+        if (likely(has_flag(flags, HitComputeFlags::UV))) {
+            Float r = norm(Point2f(pi.prim_uv.x(), pi.prim_uv.y())),
+                  inv_r = rcp(r);
 
-        Float v = atan2(local_y, local_x) * math::InvTwoPi<Float>;
-        masked(v, v < 0.f) += 1.f;
+            Float v = atan2(pi.prim_uv.y(), pi.prim_uv.x()) * math::InvTwoPi<Float>;
+            masked(v, v < 0.f) += 1.f;
+            si.uv = Point2f(r, v);
 
-        Float cos_phi = select(neq(r, 0.f), local_x * inv_r, 1.f),
-              sin_phi = select(neq(r, 0.f), local_y * inv_r, 0.f);
+            if (likely(has_flag(flags, HitComputeFlags::DPDUV))) {
+                Float cos_phi = select(neq(r, 0.f), pi.prim_uv.x() * inv_r, 1.f),
+                      sin_phi = select(neq(r, 0.f), pi.prim_uv.y() * inv_r, 0.f);
 
-        si.dp_du = m_to_world * Vector3f(cos_phi, sin_phi, 0.f);
-        si.dp_dv = m_to_world * Vector3f(-sin_phi, cos_phi, 0.f);
+                si.dp_du = m_to_world * Vector3f( cos_phi, sin_phi, 0.f);
+                si.dp_dv = m_to_world * Vector3f(-sin_phi, cos_phi, 0.f);
+            }
+        }
 
         si.n          = m_frame.n;
         si.sh_frame.n = m_frame.n;
-        si.uv         = Point2f(r, v);
-        si.p          = ray(pi.t);
-        si.time       = ray.time;
 
         return si;
     }

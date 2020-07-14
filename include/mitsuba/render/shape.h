@@ -169,7 +169,7 @@ public:
      * nd \c duv_dx, and \c duv_dy are left uninitialized.
      */
     virtual SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                             const PreliminaryIntersection3f &pi,
+                                                             PreliminaryIntersection3f pi,
                                                              HitComputeFlags flags,
                                                              Mask active = true) const;
 
@@ -177,14 +177,18 @@ public:
     /**
      * \brief Test for an intersection and return detailed information
      *
-     * This operation combines the prior \ref ray_intersect() and \ref
-     * compute_surface_interaction() operations in case intersection with a single
-     * shape is desired.
+     * This operation combines the prior \ref ray_intersect_preliminary() and
+     * \ref compute_surface_interaction() operations.
      *
      * \param ray
      *     The ray to be tested for an intersection
+     *
+     * \param flags
+     *     Describe how the detailed information should be computed
      */
-    SurfaceInteraction3f ray_intersect(const Ray3f &ray, HitComputeFlags flags, Mask active = true) const;
+    SurfaceInteraction3f ray_intersect(const Ray3f &ray,
+                                       HitComputeFlags flags,
+                                       Mask active = true) const;
 
     //! @}
     // =============================================================

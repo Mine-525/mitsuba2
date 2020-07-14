@@ -213,3 +213,50 @@ MTS_PY_EXPORT(MediumInteraction) {
     // Manually bind the slicing operators to handle ShapePtr properly
     bind_slicing_operator_mediuminteraction<MediumInteraction3f>(inter);
 }
+
+MTS_PY_EXPORT(PreliminaryIntersection) {
+    MTS_PY_IMPORT_TYPES_DYNAMIC()
+
+#define def_flag(flag) value(#flag, HitComputeFlags::flag, D(HitComputeFlags, flag))
+
+    py::enum_<HitComputeFlags>(m, "HitComputeFlags", py::arithmetic())
+        .def_flag(None)
+        .def_flag(Minimal)
+        .def_flag(UV)
+        .def_flag(DPDUV)
+        .def_flag(ShadingFrame)
+        .def_flag(Automatic)
+        .def_flag(NonDifferentiable)
+        .def_flag(Differentiable)
+        .def_flag(All)
+        .def_flag(AllNonDifferentiable)
+        .def_flag(AllDifferentiable)
+        .def(py::self | py::self)
+        .def(int() | py::self)
+        .def(py::self & py::self)
+        .def(int() & py::self);
+
+#undef def_flag
+
+    m.def("has_flag", [](HitComputeFlags f0, HitComputeFlags f1) { return has_flag(f0, f1); });
+
+    auto inter =
+        py::class_<PreliminaryIntersection3f>(m, "PreliminaryIntersection3f",
+                                              D(PreliminaryIntersection))
+        // Members
+        .def_field(PreliminaryIntersection3f, t,           D(PreliminaryIntersection, t))
+        .def_field(PreliminaryIntersection3f, prim_uv,     D(PreliminaryIntersection, prim_uv))
+        .def_field(PreliminaryIntersection3f, prim_index,  D(PreliminaryIntersection, prim_index))
+        .def_field(PreliminaryIntersection3f, shape_index, D(PreliminaryIntersection, shape_index))
+        .def_field(PreliminaryIntersection3f, shape,       D(PreliminaryIntersection, shape))
+        .def_field(PreliminaryIntersection3f, instance,    D(PreliminaryIntersection, instance))
+
+        // Methods
+        .def(py::init<>(), D(PreliminaryIntersection, PreliminaryIntersection))
+        .def("is_valid", &PreliminaryIntersection3f::is_valid, D(PreliminaryIntersection, is_valid))
+        // .def("compute_surface_interaction", &PreliminaryIntersection3f::compute_surface_interaction,
+            //  D(PreliminaryIntersection, compute_surface_interaction), "ray"_a, "flags"_a, "active"_a)
+        .def_repr(PreliminaryIntersection3f);
+
+    // TODO bind slicing operator
+}

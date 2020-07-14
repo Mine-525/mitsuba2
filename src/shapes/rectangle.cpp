@@ -176,38 +176,28 @@ public:
     }
 
     SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                     const PreliminaryIntersection3f& pi,
+                                                     PreliminaryIntersection3f pi,
                                                      HitComputeFlags flags,
                                                      Mask active) const override {
         MTS_MASK_ARGUMENT(active);
-        #if defined(MTS_ENABLE_EMBREE)
-            // TODO
-            // cache = nullptr;
-        #endif
+
+        // Recompute ray intersection to get differentiable prim_uv and t
+        if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
+            pi = ray_intersect(ray, active);
+
+        active &= pi.is_valid();
 
         SurfaceInteraction3f si = zero<SurfaceInteraction3f>();
-        si.t = math::Infinity<Float>;
+        si.t = select(active, pi.t, math::Infinity<Float>);
 
-        Float local_x, local_y;
-        // if (cache) { // TODO use flags
-            local_x = pi.prim_uv[0];
-            local_y = pi.prim_uv[1];
-        // } else {
-            // Ray3f ray_local = m_to_object.transform_affine(ray);
-            // Float t = -ray_local.o.z() * ray_local.d_rcp.z();
-            // Point3f local = ray_local(t);
-            // local_x = local.x();
-            // local_y = local.y();
-        // }
+        si.p = ray(pi.t);
 
         si.n          = m_frame.n;
         si.sh_frame.n = m_frame.n;
         si.dp_du      = m_frame.s;
         si.dp_dv      = m_frame.t;
-        si.p          = ray(pi.t);
-        si.time       = ray.time;
-        si.uv         = Point2f(fmadd(local_x, .5f, .5f),
-                                fmadd(local_y, .5f, .5f));
+        si.uv         = Point2f(fmadd(pi.prim_uv.x(), .5f, .5f),
+                                fmadd(pi.prim_uv.y(), .5f, .5f));
 
         return si;
     }

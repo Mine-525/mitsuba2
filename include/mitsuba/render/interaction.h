@@ -457,7 +457,7 @@ enum class HitComputeFlags : uint32_t {
     // =============================================================
 
     /// Compute all fields of the surface interaction data structure (default)
-    AllAutomatic = UV | DPDUV | ShadingFrame | Automatic,
+    All = UV | DPDUV | ShadingFrame | Automatic,
 
     /// Compute all fields of the surface interaction data structure in a non differentiable way
     AllNonDifferentiable = UV | DPDUV | ShadingFrame | NonDifferentiable,
@@ -506,14 +506,14 @@ struct PreliminaryIntersection {
     /// 2D coordinates on the primitive surface parameterization
     Point2f prim_uv;
 
-    /// Pointer to the associated shape
-    ShapePtr shape = nullptr;
-
     /// Primitive index, e.g. the triangle ID (if applicable)
     Index prim_index;
 
     /// Shape index, e.g. the shape ID in shapegroup (if applicable)
     Index shape_index;
+
+    /// Pointer to the associated shape
+    ShapePtr shape = nullptr;
 
     /// Stores a pointer to the parent instance (if applicable)
     ShapePtr instance = nullptr;
@@ -530,18 +530,18 @@ struct PreliminaryIntersection {
         return neq(t, math::Infinity<Float>);
     }
 
+    /// Compute the surface interaction TODO
     SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray, HitComputeFlags flags, Mask active) {
-        // TODO use flags to check whether to call the method
         SurfaceInteraction3f si = shape->compute_surface_interaction(ray, *this, flags, active);
         active &= is_valid();
-        si.t = select(active, t, math::Infinity<Float>);
+        si.t = select(active, si.t, math::Infinity<Float>);
         si.prim_index  = prim_index;
         si.shape       = shape;
         si.instance    = instance;
         si.time        = ray.time;
         si.wavelengths = ray.wavelengths;
 
-        if (has_flag(flags, HitComputeFlags::ShadingFrame)) { // TODO
+        if (has_flag(flags, HitComputeFlags::ShadingFrame)) {
             // Gram-schmidt orthogonalization to compute local shading frame
             si.sh_frame.s = normalize(
                 fnmadd(si.sh_frame.n, dot(si.sh_frame.n, si.dp_du), si.dp_du));
@@ -559,7 +559,7 @@ struct PreliminaryIntersection {
     //! @}
     // =============================================================
 
-    ENOKI_STRUCT(PreliminaryIntersection, t, prim_uv, shape, prim_index, shape_index, instance);
+    ENOKI_STRUCT(PreliminaryIntersection, t, prim_uv, prim_index, shape_index, shape, instance);
 };
 
 // -----------------------------------------------------------------------------
@@ -659,7 +659,7 @@ ENOKI_STRUCT_SUPPORT(mitsuba::SurfaceInteraction, t, time, wavelengths, p,
 ENOKI_STRUCT_SUPPORT(mitsuba::MediumInteraction, t, time, wavelengths, p,
                      medium, sh_frame, wi, sigma_s, sigma_n, sigma_t, combined_extinction, mint)
 
-ENOKI_STRUCT_SUPPORT(mitsuba::PreliminaryIntersection, t, prim_uv, shape, prim_index, shape_index, instance)
+ENOKI_STRUCT_SUPPORT(mitsuba::PreliminaryIntersection, t, prim_uv, prim_index, shape_index, shape, instance)
 
 //! @}
 // -----------------------------------------------------------------------

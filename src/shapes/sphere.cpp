@@ -331,51 +331,60 @@ public:
     }
 
     SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
-                                                     const PreliminaryIntersection3f& pi,
-                                                     HitComputeFlags /*flags*/, //TODO use flags
+                                                     PreliminaryIntersection3f pi,
+                                                     HitComputeFlags flags,
                                                      Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
+        // Recompute ray intersection to get differentiable prim_uv and t
+        if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
+            pi = ray_intersect(ray, active);
+
+        active &= pi.is_valid();
+
         SurfaceInteraction3f si = zero<SurfaceInteraction3f>();
-        si.t = math::Infinity<Float>;
+        si.t = select(active, pi.t, math::Infinity<Float>);
 
         si.sh_frame.n = normalize(ray(pi.t) - m_center);
 
         // Re-project onto the sphere to improve accuracy
         si.p = fmadd(si.sh_frame.n, m_radius, m_center);
 
-        Vector3f local = m_to_object.transform_affine(si.p);
+        if (likely(has_flag(flags, HitComputeFlags::UV))) {
+            Vector3f local = m_to_object.transform_affine(si.p);
 
-        Float rd_2  = sqr(local.x()) + sqr(local.y()),
-              theta = unit_angle_z(local),
-              phi   = atan2(local.y(), local.x());
+            Float rd_2  = sqr(local.x()) + sqr(local.y()),
+                theta = unit_angle_z(local),
+                phi   = atan2(local.y(), local.x());
 
-        masked(phi, phi < 0.f) += 2.f * math::Pi<Float>;
+            masked(phi, phi < 0.f) += 2.f * math::Pi<Float>;
 
-        si.uv = Point2f(phi * math::InvTwoPi<Float>, theta * math::InvPi<Float>);
-        si.dp_du = Vector3f(-local.y(), local.x(), 0.f);
+            si.uv = Point2f(phi * math::InvTwoPi<Float>, theta * math::InvPi<Float>);
+            if (likely(has_flag(flags, HitComputeFlags::DPDUV))) {
+                si.dp_du = Vector3f(-local.y(), local.x(), 0.f);
 
-        Float rd      = sqrt(rd_2),
-              inv_rd  = rcp(rd),
-              cos_phi = local.x() * inv_rd,
-              sin_phi = local.y() * inv_rd;
+                Float rd      = sqrt(rd_2),
+                    inv_rd  = rcp(rd),
+                    cos_phi = local.x() * inv_rd,
+                    sin_phi = local.y() * inv_rd;
 
-        si.dp_dv = Vector3f(local.z() * cos_phi,
-                            local.z() * sin_phi,
-                            -rd);
+                si.dp_dv = Vector3f(local.z() * cos_phi,
+                                    local.z() * sin_phi,
+                                    -rd);
 
-        Mask singularity_mask = active && eq(rd, 0.f);
-        if (unlikely(any(singularity_mask)))
-            si.dp_dv[singularity_mask] = Vector3f(1.f, 0.f, 0.f);
+                Mask singularity_mask = active && eq(rd, 0.f);
+                if (unlikely(any(singularity_mask)))
+                    si.dp_dv[singularity_mask] = Vector3f(1.f, 0.f, 0.f);
 
-        si.dp_du = m_to_world * si.dp_du * (2.f * math::Pi<Float>);
-        si.dp_dv = m_to_world * si.dp_dv * math::Pi<Float>;
+                si.dp_du = m_to_world * si.dp_du * (2.f * math::Pi<Float>);
+                si.dp_dv = m_to_world * si.dp_dv * math::Pi<Float>;
+            }
+        }
 
         if (m_flip_normals)
             si.sh_frame.n = -si.sh_frame.n;
 
         si.n = si.sh_frame.n;
-        si.time = ray.time;
 
         return si;
     }

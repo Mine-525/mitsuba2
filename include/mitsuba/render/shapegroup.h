@@ -144,16 +144,27 @@ public:
     std::string to_string() const override;
 
 #if defined(MTS_ENABLE_OPTIX)
-    void optix_accel_handle(const OptixDeviceContext& context,
-                            OptixInstance& instance) {
-        if (m_accel.handle == 0ull)
-            build_gas(m_shapes, context, m_sbt_offset, m_accel, instance.instanceId);
-        instance.traversableHandle = m_accel.handle;
-        instance.sbtOffset = m_sbt_offset;
+    virtual void optix_prepare_instances(const OptixDeviceContext& context,
+                                         std::vector<OptixInstance>& instances,
+                                         uint32_t instance_id,
+                                         const ScalarTransform4f& transf) override {
+        create_instances(context, m_shapes, m_sbt_offset, m_accel, instance_id, transf, instances);
+    }
+
+    void optix_prepare_gas(const OptixDeviceContext& context) {
+        if (!optix_accel_ready) {
+            std::vector<ref<ShapeGroup>> dummy_shapegroups;
+            build_gas(context, m_shapes, dummy_shapegroups, m_accel);
+            optix_accel_ready = true;
+        }
     }
 
     virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records,
-                                             OptixProgramGroup *program_groups) override;
+                                             const OptixProgramGroup *program_groups) override {
+        m_sbt_offset = hitgroup_records.size();
+        std::vector<ref<Base>> dummy_shapegroups;
+        fill_hitgroup_records(m_shapes, dummy_shapegroups, hitgroup_records, program_groups);
+    }
 #endif
 
     MTS_DECLARE_CLASS()
@@ -172,6 +183,7 @@ private:
         std::vector<ref<Base>> m_shapes;
     #endif
     OptixAccelData m_accel;
+    bool optix_accel_ready = false;
     /// OptiX hitgroup sbt offset
     uint32_t m_sbt_offset;
 #endif

@@ -414,26 +414,34 @@ public:
     virtual void optix_build_input(OptixBuildInput& build_input) const;
 
     /**
-     * \brief Prepares and fills the OptixInstance associated with this shape. This
+     * \brief Prepares and fills the OptixInstance(s) associated with this shape. This
      *        process includes generating the Optix acceleration data structure
-     *        represented by this shape, and populating the OptixInstance struct.
+     *        represented by this shape, and pushing OptixInstance structs to the
+     *        provided instances vector.
      *
-     * \remark This method is currently implemented for the \ref Instance plugin.
+     * \remark This method is currently only implemented for the \ref Instance and
+     *         \ref ShapeGroup plugin.
      *
      * \param context
      *     The Optix context that was used to construct the rest of the scene's
      *     Optix representation.
      *
-     * \param instance
-     *     The OptixInstance to be filled.
+     * \param instances
+     *     The array to which new OptixInstance should be appended.
      *
      * \param instance_id
      *     The instance id, used internally inside Optix to detect when a Shape is
      *     part of an Instance.
      *
+     * \param transf
+     *     The current to_world transformation (should allow for recursive instancing).
+     *
      * The default implementation throws an exception.
      */
-    virtual void optix_prepare_instance(const OptixDeviceContext& context, OptixInstance& instance, uint32_t instance_id);
+    virtual void optix_prepare_instances(const OptixDeviceContext& /*context*/, 
+                                         std::vector<OptixInstance>& /*instances*/,
+                                         uint32_t /*instance_id*/,
+                                         const ScalarTransform4f& /*transf*/);
 
     /**
      * \brief Creates and appends the HitGroupSbtRecord(s) associated with this
@@ -455,7 +463,8 @@ public:
      * with one of the OptixProgramGroup of the \ref program_groups array (the actual program
      * group index is infered by the type of the Shape, see \ref get_shape_descr_idx()).
      */
-    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records, OptixProgramGroup *program_groups);
+    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records,
+                                             const OptixProgramGroup *program_groups);
 #endif
 
     void traverse(TraversalCallback *callback) override;

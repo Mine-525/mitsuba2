@@ -5,7 +5,7 @@
 #include <mitsuba/core/transform.h>
 #include <mitsuba/render/interaction.h>
 #include <mitsuba/render/bsdf.h>
-#include "shapegroup.h"
+#include <mitsuba/render/shapegroup.h>
 
 #if defined(MTS_ENABLE_EMBREE)
     #include <embree3/rtcore.h>
@@ -64,7 +64,7 @@ public:
                     Throw("Only a single shapegroup can be specified per instance.");
                 m_shapegroup = (ShapeGroup*)shape;
             } else {
-                    Throw("Only a shapegroup can be specified in an instance.");
+                Throw("Only a shapegroup can be specified in an instance.");
             }
         }
 
@@ -180,20 +180,14 @@ public:
 #endif
 
 #if defined(MTS_ENABLE_OPTIX)
-    virtual void optix_prepare_instance(const OptixDeviceContext& context, OptixInstance& instance, uint32_t instance_id) override {
-        float transform[12] = {
-            m_to_world.matrix(0, 0), m_to_world.matrix(0, 1), m_to_world.matrix(0, 2), m_to_world.matrix(0, 3),
-            m_to_world.matrix(1, 0), m_to_world.matrix(1, 1), m_to_world.matrix(1, 2), m_to_world.matrix(1, 3),
-            m_to_world.matrix(2, 0), m_to_world.matrix(2, 1), m_to_world.matrix(2, 2), m_to_world.matrix(2, 3)
-        };
-        std::memcpy(instance.transform, transform, sizeof(float) * 12);
-        instance.instanceId = instance_id;
-        instance.visibilityMask = 255;
-        instance.flags = OPTIX_INSTANCE_FLAG_NONE;
-        m_shapegroup->optix_accel_handle(context, instance);
+    virtual void optix_prepare_instances(const OptixDeviceContext& context, 
+                                         std::vector<OptixInstance>& instances,
+                                         uint32_t instance_id,
+                                         const ScalarTransform4f& transf) override {
+        m_shapegroup->optix_prepare_instances(context, instances, instance_id, transf * m_to_world);
     }
 
-    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord>&, OptixProgramGroup*) override {
+    virtual void optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord>&, const OptixProgramGroup*) override {
         /* no op */
     }
 #endif

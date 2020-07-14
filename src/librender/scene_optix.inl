@@ -28,7 +28,7 @@ static void context_log_cb(unsigned int level, const char* tag, const char* mess
     static constexpr size_t ProgramGroupCount = 3 + custom_optix_shapes_count;
 #endif
 
-static constexpr const char* ptx_file_path = "optix/optix_rt.ptx";
+static constexpr const char* ptx_file_path = "/home/benoit/Desktop/cpp/mitsuba2_instancing/resources/ptx/optix_rt.ptx";
 
 struct OptixState {
     OptixDeviceContext context;
@@ -37,6 +37,9 @@ struct OptixState {
     OptixProgramGroup program_groups[ProgramGroupCount];
     OptixShaderBindingTable sbt = {};
     OptixAccelData accel;
+    OptixTraversableHandle ias_handle = 0ull;
+    void* ias_buffer = nullptr;
+
     void* params;
     char *custom_optix_shapes_program_names[2 * custom_optix_shapes_count];
 
@@ -195,7 +198,7 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
         //  Shader Binding Table generation
         // ---------------------------------
         std::vector<HitGroupSbtRecord> hg_sbts;
-        fill_hitgroup_records(hg_sbts, m_shapes, m_shapegroups, s.program_groups);
+        fill_hitgroup_records(m_shapes, m_shapegroups, hg_sbts, s.program_groups);
 
         size_t shapes_count = hg_sbts.size();
         void* records = cuda_malloc(sizeof(RayGenSbtRecord) + sizeof(MissSbtRecord) + sizeof(HitGroupSbtRecord) * shapes_count);
@@ -242,8 +245,57 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_init_gpu(const Properties &/*prop
 
 MTS_VARIANT void Scene<Float, Spectrum>::accel_parameters_changed_gpu() {
     if constexpr (is_cuda_array_v<Float>) {
+        if (m_shapes.empty())
+            return;
         OptixState &s = *(OptixState *) m_accel;
-        build_gas(m_shapes, s.context, 0, s.accel, m_shapes.size());
+        build_gas(s.context, m_shapes, m_shapegroups, s.accel);
+
+        std::vector<OptixInstance> instances;
+        create_instances(s.context, m_shapes, 0, s.accel, m_shapes.size(), ScalarTransform4f(), instances);
+
+        if (instances.size() == 1) {
+            s.ias_buffer = nullptr;
+            s.ias_handle = instances[0].traversableHandle;
+            return;
+        }
+        
+        OptixAccelBuildOptions accel_options = {};
+        accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_COMPACTION;
+        accel_options.operation  = OPTIX_BUILD_OPERATION_BUILD;
+        accel_options.motionOptions.numKeys = 0;
+        
+        void* d_instances = cuda_malloc(instances.size() * sizeof(OptixInstance));
+        cuda_memcpy_to_device(d_instances, instances.data(), instances.size() * sizeof(OptixInstance));
+
+        OptixBuildInput build_input;
+        build_input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+        build_input.instanceArray.instances = (CUdeviceptr) d_instances;
+        build_input.instanceArray.numInstances = instances.size();
+        build_input.instanceArray.aabbs = 0;
+        build_input.instanceArray.numAabbs = 0;
+
+        OptixAccelBufferSizes buffer_sizes;
+        rt_check(optixAccelComputeMemoryUsage(s.context, &accel_options, &build_input, 1, &buffer_sizes));
+        void* d_temp_buffer = cuda_malloc(buffer_sizes.tempSizeInBytes);
+        s.ias_buffer    = cuda_malloc(buffer_sizes.outputSizeInBytes);
+
+        rt_check(optixAccelBuild(
+            s.context,
+            0,              // CUDA stream
+            &accel_options,
+            &build_input,
+            1,              // num build inputs
+            (CUdeviceptr)d_temp_buffer,
+            buffer_sizes.tempSizeInBytes,
+            (CUdeviceptr)s.ias_buffer,
+            buffer_sizes.outputSizeInBytes,
+            &s.ias_handle,
+            0,  // emitted property list
+            0   // num emitted properties
+        ));
+
+        cuda_free(d_temp_buffer);
+        cuda_free(d_instances);
     }
 }
 
@@ -252,6 +304,7 @@ MTS_VARIANT void Scene<Float, Spectrum>::accel_release_gpu() {
         OptixState &s = *(OptixState *) m_accel;
         cuda_free((void*)s.sbt.raygenRecord);
         cuda_free((void*)s.params);
+        cuda_free(s.ias_buffer);
         rt_check(optixPipelineDestroy(s.pipeline));
         for (size_t i = 0; i < ProgramGroupCount; i++)
             rt_check(optixProgramGroupDestroy(s.program_groups[i]));
@@ -324,7 +377,7 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, Mask active) const 
             // Out: Hit flag
             nullptr,
             // top_object
-            s.accel.handle,
+            s.ias_handle,
             // max instance id
             (unsigned int)m_shapes.size()
         };
@@ -364,7 +417,7 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, Mask active) const 
 
         Mask valid_instances = instance_index < m_shapes.size();
         si.instance = gather<ShapePtr>(reinterpret_array<ShapePtr>(s.shapes_ptr), instance_index, active & valid_instances);
-        
+
         // Gram-schmidt orthogonalization to compute local shading frame
         si.sh_frame.s = normalize(
             fnmadd(si.sh_frame.n, dot(si.sh_frame.n, si.dp_du), si.dp_du));
@@ -426,7 +479,7 @@ Scene<Float, Spectrum>::ray_test_gpu(const Ray3f &ray_, Mask active) const {
             // Out: Hit flag
             hit.data(),
             // top_object
-            s.accel.handle,
+            s.ias_handle,
             // max instance id
             (unsigned int)m_shapes.size()
         };

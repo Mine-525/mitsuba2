@@ -63,6 +63,7 @@ option(MTS_ENABLE_EMBREE  "Use Embree for ray tracing operations?" OFF)
 option(MTS_ENABLE_GUI     "Build GUI" OFF)
 if (MTS_ENABLE_OPTIX)
   option(MTS_USE_OPTIX_HEADERS "Use OptiX header files instead of resolving GPU ray tracing API ourselves." OFF)
+  option(MTS_COMPILE_PTX "Compile ptx kernels as part of the standard pipeline." OFF)
 endif()
 
 if (UNIX)

@@ -31,10 +31,11 @@ MTS_VARIANT Scene<Float, Spectrum>::Scene(const Properties &props) {
         if (shape) {
             if (shape->is_emitter())
                 m_emitters.push_back(shape->emitter());
+                m_sensors.push_back(shape->sensor());
             if (shape->is_sensor())
                 m_sensors.push_back(shape->sensor());
             if (shape->is_shapegroup()) {
-                m_shapegroups.push_back(shape);
+                m_shapegroups.push_back((ShapeGroup*)shape);
             } else {
                 m_bbox.expand(shape->bbox());
                 m_shapes.push_back(shape);

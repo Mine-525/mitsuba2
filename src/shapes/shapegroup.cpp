@@ -1,7 +1,6 @@
-#include "shapegroup.h"
+#include <mitsuba/render/shapegroup.h>
 
 #include <mitsuba/core/properties.h>
-#include <mitsuba/render/shape.h>
 #include <mitsuba/render/optix_api.h>
 
 NAMESPACE_BEGIN(mitsuba)
@@ -20,7 +19,8 @@ MTS_VARIANT ShapeGroup<Float, Spectrum>::ShapeGroup(const Properties &props) {
             Throw("Nested instancing is not permitted");
         } else if (c_class->derives_from(MTS_CLASS(Base))) {
             Base *shape = static_cast<Base *>(kv.second.get());
-            if (shape->is_shapegroup())
+            ShapeGroup *shapegroup = dynamic_cast<ShapeGroup *>(kv.second.get());
+            if (shapegroup)
                 Throw("Nested ShapeGroup is not permitted");
             if (shape->is_emitter())
                 Throw("Instancing of emitters is not supported");
@@ -77,16 +77,6 @@ ShapeGroup<Float, Spectrum>::to_string() const {
             << "]";
     return oss.str();
 }
-
-#if defined(MTS_ENABLE_OPTIX)
-MTS_VARIANT void
-ShapeGroup<Float, Spectrum>::optix_fill_hitgroup_records(std::vector<HitGroupSbtRecord> &hitgroup_records,
-                                                         OptixProgramGroup *program_groups) {
-    m_sbt_offset = hitgroup_records.size();
-    std::vector<ref<Base>> dummy_shapegroups;
-    fill_hitgroup_records(hitgroup_records, m_shapes, dummy_shapegroups, program_groups);
-}
-#endif
 
 MTS_EXPORT_PLUGIN(ShapeGroup, "Grouped geometry for instancing")
 NAMESPACE_END(mitsuba)

@@ -146,6 +146,12 @@ struct SurfaceInteraction : Interaction<Float_, Spectrum_> {
         : Base(0.f, ps.time, wavelengths, ps.p), uv(ps.uv), n(ps.n),
           sh_frame(Frame3f(ps.n)) { }
 
+    /// Initialize local shading frame using Gram-schmidt orthogonalization
+    void initialize_local_sh_frame() {
+        sh_frame.s = normalize(fnmadd(sh_frame.n, dot(sh_frame.n, dp_du), dp_du));
+        sh_frame.t = cross(sh_frame.n, sh_frame.s);
+    }
+
     /// Convert a local shading-space vector into world space
     Vector3f to_world(const Vector3f &v) const {
         return sh_frame.to_world(v);
@@ -417,7 +423,14 @@ struct MediumInteraction : Interaction<Float_, Spectrum_> {
 };
 
 // -----------------------------------------------------------------------------
-// TODO add description
+
+/**
+ * \brief This list of flags is used to determine which members of \ref SurfaceInteraction
+ * should be computed when calling \ref compute_surface_interaction().
+ *
+ * It also specifies whether the \ref SurfaceInteraction should be differentiable with
+ * respect to the shapes parameters.
+ */
 enum class HitComputeFlags : uint32_t {
 
     // =============================================================
@@ -443,27 +456,21 @@ enum class HitComputeFlags : uint32_t {
     //!              Differentiability compute flags
     // =============================================================
 
-    /// Differentiability will depend on global parameter
-    Automatic             = 0x00010,
+    /// Differentiability is requested
+    Differentiable          = 0x00010,
 
     /// Force computed fields to not be be differentiable
-    NonDifferentiable     = 0x00040,
-
-    /// Force computed fields to be differentiable w.r.t. the shape's parameters
-    Differentiable        = 0x00080,
+    NonDifferentiable  = 0x00040,
 
     // =============================================================
     //!                 Compound compute flags
     // =============================================================
 
     /// Compute all fields of the surface interaction data structure (default)
-    All = UV | DPDUV | ShadingFrame | Automatic,
+    All = UV | DPDUV | ShadingFrame,
 
     /// Compute all fields of the surface interaction data structure in a non differentiable way
     AllNonDifferentiable = UV | DPDUV | ShadingFrame | NonDifferentiable,
-
-    /// Compute all fields of the surface interaction data structure in a differentiable way
-    AllDifferentiable    = UV | DPDUV | ShadingFrame | Differentiable,
 };
 
 constexpr uint32_t operator |(HitComputeFlags f1, HitComputeFlags f2)  { return (uint32_t) f1 | (uint32_t) f2; }
@@ -475,8 +482,8 @@ constexpr uint32_t operator +(HitComputeFlags e)                       { return 
 constexpr bool has_flag(HitComputeFlags f0, HitComputeFlags f1)        { return ((uint32_t) f0 & (uint32_t) f1) != 0; }
 
 // -----------------------------------------------------------------------------
-// TODO add description
-/// Ray intersection data structure
+
+/// Stores preliminary information related to a ray intersection
 template <typename Float_, typename Spectrum_>
 struct PreliminaryIntersection {
 
@@ -528,8 +535,19 @@ struct PreliminaryIntersection {
         return neq(t, math::Infinity<Float>);
     }
 
-    /// Compute the surface interaction TODO
-    SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray, HitComputeFlags flags, Mask active) {
+    /**
+     * \brief Compute and return detailed information related to a surface interaction
+     *
+     * \param ray
+     *      Ray associated with the ray intersection
+     * \param flags
+     *      Flags specifying which information should be computed
+     * \return
+     *      A data structure containing the detailed information
+     */
+    SurfaceInteraction3f compute_surface_interaction(const Ray3f &ray,
+                                                     HitComputeFlags flags,
+                                                     Mask active) {
         SurfaceInteraction3f si = shape->compute_surface_interaction(ray, *this, flags, active);
         active &= is_valid();
         si.t = select(active, si.t, math::Infinity<Float>);
@@ -539,12 +557,8 @@ struct PreliminaryIntersection {
         si.time        = ray.time;
         si.wavelengths = ray.wavelengths;
 
-        if (has_flag(flags, HitComputeFlags::ShadingFrame)) {
-            // Gram-schmidt orthogonalization to compute local shading frame
-            si.sh_frame.s = normalize(
-                fnmadd(si.sh_frame.n, dot(si.sh_frame.n, si.dp_du), si.dp_du));
-            si.sh_frame.t = cross(si.sh_frame.n, si.sh_frame.s);
-        }
+        if (has_flag(flags, HitComputeFlags::ShadingFrame))
+            si.initialize_local_sh_frame();
 
         // Incident direction in local coordinates
         si.wi = select(active, si.to_local(-ray.d), -ray.d);

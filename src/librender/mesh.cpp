@@ -458,12 +458,12 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
                                                    Mask active) const {
     MTS_MASK_ARGUMENT(active);
 
-    bool differentiable_pos = false;
+    bool differentiable = false;
     if constexpr (is_diff_array_v<Float>)
-        differentiable_pos = requires_gradient(m_vertex_positions_buf);
+        differentiable = requires_gradient(m_vertex_positions_buf) || requires_gradient(ray.o); // TODO check for ray struct
 
     // Recompute ray intersection to get differentiable prim_uv and t
-    if (differentiable_pos && has_flag(flags, HitComputeFlags::Differentiable))
+    if (differentiable && !has_flag(flags, HitComputeFlags::NonDifferentiable))
         pi = ray_intersect_triangle(pi.prim_index, ray, active);
 
     active &= pi.is_valid();
@@ -888,6 +888,14 @@ MTS_VARIANT void Mesh<Float, Spectrum>::parameters_changed(const std::vector<std
     }
 }
 
+MTS_VARIANT bool Mesh<Float, Spectrum>::parameters_require_gradient() const {
+    if constexpr (is_diff_array_v<Float>)
+        return requires_gradient(m_vertex_positions_buf) ||
+               requires_gradient(m_vertex_normals_buf) ||
+               requires_gradient(m_vertex_texcoords_buf);
+
+    return false;
+}
 
 MTS_IMPLEMENT_CLASS_VARIANT(Mesh, Shape)
 MTS_INSTANTIATE_CLASS(Mesh)

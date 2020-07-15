@@ -336,8 +336,12 @@ public:
                                                      Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
+        bool differentiable = false;
+        if constexpr (is_diff_array_v<Float>)
+            differentiable = requires_gradient(ray.o); // TODO check for ray struct
+
         // Recompute ray intersection to get differentiable prim_uv and t
-        if (is_diff_array_v<Float> && has_flag(flags, HitComputeFlags::Differentiable))
+        if (differentiable && !has_flag(flags, HitComputeFlags::NonDifferentiable))
             pi = ray_intersect_preliminary(ray, active);
 
         active &= pi.is_valid();

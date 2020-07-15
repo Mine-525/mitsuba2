@@ -524,14 +524,19 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, HitComputeFlags fla
         Assert(!m_shapes.empty());
         OptixState &s = *(OptixState *) m_accel;
 
-        if (has_flag(flags, HitComputeFlags::Differentiable) && !is_diff_array_v<Float>)
-            Throw("ray_intersect_gpu(): variant should be autodiff when "
-                  "differentiable intersection is requested.");
+        if constexpr (is_diff_array_v<Float>) {
+            if (!has_flag(flags, HitComputeFlags::NonDifferentiable)) {
+                // TODO precompute this
+                bool differentiable = false;
+                for (auto& s : m_shapes)
+                    differentiable |= s->parameters_require_gradient();
 
-        // Differentiable SurfaceInteraction needs to be computed outside of the OptiX kernel
-        if (has_flag(flags, HitComputeFlags::Differentiable)) {
-            auto pi = ray_intersect_preliminary_gpu(ray_, active);
-            return pi.compute_surface_interaction(ray_, flags, active);
+                // Differentiable SurfaceInteraction needs to be computed outside of the OptiX kernel
+                if (differentiable) {
+                    auto pi = ray_intersect_preliminary_gpu(ray_, active);
+                    return pi.compute_surface_interaction(ray_, flags, active);
+                }
+            }
         }
 
         Ray3f ray(ray_);
@@ -603,12 +608,8 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, HitComputeFlags fla
         si.instance = nullptr;
         si.duv_dx = si.duv_dy = 0.f;
 
-        if (has_flag(flags, HitComputeFlags::ShadingFrame)) {
-            // Gram-schmidt orthogonalization to compute local shading frame
-            si.sh_frame.s = normalize(
-                fnmadd(si.sh_frame.n, dot(si.sh_frame.n, si.dp_du), si.dp_du));
-            si.sh_frame.t = cross(si.sh_frame.n, si.sh_frame.s);
-        }
+        if (has_flag(flags, HitComputeFlags::ShadingFrame))
+            si.initialize_local_sh_frame();
 
         // Incident direction in local coordinates
         si.wi = select(si.is_valid(), si.to_local(-ray.d), -ray.d);

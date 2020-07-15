@@ -396,6 +396,10 @@ void Shape<Float, Spectrum>::parameters_changed(const std::vector<std::string> &
         m_sensor->parameters_changed({"parent"});
 }
 
+MTS_VARIANT bool Shape<Float, Spectrum>::parameters_require_gradient() const {
+    return false;
+}
+
 MTS_VARIANT void Shape<Float, Spectrum>::set_children() {
     if (m_emitter)
         m_emitter->set_shape(this);

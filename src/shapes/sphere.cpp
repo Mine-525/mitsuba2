@@ -354,8 +354,8 @@ public:
             Vector3f local = m_to_object.transform_affine(si.p);
 
             Float rd_2  = sqr(local.x()) + sqr(local.y()),
-                theta = unit_angle_z(local),
-                phi   = atan2(local.y(), local.x());
+                  theta = unit_angle_z(local),
+                  phi   = atan2(local.y(), local.x());
 
             masked(phi, phi < 0.f) += 2.f * math::Pi<Float>;
 
@@ -364,9 +364,9 @@ public:
                 si.dp_du = Vector3f(-local.y(), local.x(), 0.f);
 
                 Float rd      = sqrt(rd_2),
-                    inv_rd  = rcp(rd),
-                    cos_phi = local.x() * inv_rd,
-                    sin_phi = local.y() * inv_rd;
+                      inv_rd  = rcp(rd),
+                      cos_phi = local.x() * inv_rd,
+                      sin_phi = local.y() * inv_rd;
 
                 si.dp_dv = Vector3f(local.z() * cos_phi,
                                     local.z() * sin_phi,

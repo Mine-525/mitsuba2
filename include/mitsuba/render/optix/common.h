@@ -15,24 +15,35 @@ struct OptixHitGroupData {
 /// Launch-varying parameters
 struct OptixParams {
     bool    *in_mask;
-    float   *in_ox, *in_oy, *in_oz,
-            *in_dx, *in_dy, *in_dz,
+    float   *in_o[3],
+            *in_d[3],
             *in_mint, *in_maxt;
-    float   *out_t, *out_u, *out_v,
-            *out_ng_x, *out_ng_y, *out_ng_z,
-            *out_ns_x, *out_ns_y, *out_ns_z,
-            *out_p_x, *out_p_y, *out_p_z,
-            *out_dp_du_x, *out_dp_du_y, *out_dp_du_z,
-            *out_dp_dv_x, *out_dp_dv_y, *out_dp_dv_z;
+    float   *out_t,
+            *out_prim_uv[2],
+            *out_uv[2],
+            *out_ng[3],
+            *out_ns[3],
+            *out_p[3],
+            *out_dp_du[3],
+            *out_dp_dv[3];
 
     unsigned long long *out_shape_ptr;
-    unsigned int *out_primitive_id;
+    unsigned int *out_prim_index;
 
     bool *out_hit;
 
     OptixTraversableHandle handle;
 
-    bool compute_surface_interaction;
+#ifdef __CUDACC__
+    __device__ bool is_ray_test() { return out_hit; }
+    __device__ bool is_ray_intersect_preliminary() { return out_prim_uv[0]; }
+
+    __device__ bool has_uv() { return out_uv[0]; }
+    __device__ bool has_ng() { return out_ng[0]; }
+    __device__ bool has_ns() { return out_ns[0]; }
+    __device__ bool has_dp_duv() { return out_dp_du[0]; }
+#endif
+
 };
 
 #ifdef __CUDACC__
@@ -42,46 +53,67 @@ extern "C" {
 
 using namespace optix;
 
-__device__ void write_output_params(OptixParams &params,
-                                    unsigned int launch_index,
-                                    unsigned long long shape_ptr,
-                                    unsigned int prim_id,
-                                    const Vector3f &p,
-                                    const Vector2f &uv,
-                                    const Vector3f &ns,
-                                    const Vector3f &ng,
-                                    const Vector3f &dp_du,
-                                    const Vector3f &dp_dv,
-                                    float t) {
+__device__ void write_output_pi_params(OptixParams &params,
+                                       unsigned int launch_index,
+                                       unsigned long long shape_ptr,
+                                       unsigned int prim_id,
+                                       const Vector2f &prim_uv,
+                                       float t) {
+    params.out_shape_ptr[launch_index] = shape_ptr;
+    params.out_prim_index[launch_index] = prim_id;
+
+    params.out_prim_uv[0][launch_index] = prim_uv.x();
+    params.out_prim_uv[1][launch_index] = prim_uv.y();
+
+    params.out_t[launch_index] = t;
+}
+
+__device__ void write_output_si_params(OptixParams &params,
+                                       unsigned int launch_index,
+                                       unsigned long long shape_ptr,
+                                       unsigned int prim_id,
+                                       const Vector3f &p,
+                                       const Vector2f &uv,
+                                       const Vector3f &ns,
+                                       const Vector3f &ng,
+                                       const Vector3f &dp_du,
+                                       const Vector3f &dp_dv,
+                                       float t) {
 
     params.out_shape_ptr[launch_index] = shape_ptr;
-    params.out_primitive_id[launch_index] = prim_id;
+    params.out_prim_index[launch_index] = prim_id;
 
-    params.out_u[launch_index] = uv.x();
-    params.out_v[launch_index] = uv.y();
-
-    params.out_p_x[launch_index] = p.x();
-    params.out_p_y[launch_index] = p.y();
-    params.out_p_z[launch_index] = p.z();
+    params.out_p[0][launch_index] = p.x();
+    params.out_p[1][launch_index] = p.y();
+    params.out_p[2][launch_index] = p.z();
 
     params.out_t[launch_index] = t;
 
-    if (params.compute_surface_interaction) {
-        params.out_ng_x[launch_index] = ng.x();
-        params.out_ng_y[launch_index] = ng.y();
-        params.out_ng_z[launch_index] = ng.z();
+    if (params.has_uv()) {
+        params.out_uv[0][launch_index] = uv.x();
+        params.out_uv[1][launch_index] = uv.y();
+    }
 
-        params.out_ns_x[launch_index] = ns.x();
-        params.out_ns_y[launch_index] = ns.y();
-        params.out_ns_z[launch_index] = ns.z();
+    if (params.has_ng()) {
+        params.out_ng[0][launch_index] = ng.x();
+        params.out_ng[1][launch_index] = ng.y();
+        params.out_ng[2][launch_index] = ng.z();
+    }
 
-        params.out_dp_du_x[launch_index] = dp_du.x();
-        params.out_dp_du_y[launch_index] = dp_du.y();
-        params.out_dp_du_z[launch_index] = dp_du.z();
+    if (params.has_ns()) {
+        params.out_ns[0][launch_index] = ns.x();
+        params.out_ns[1][launch_index] = ns.y();
+        params.out_ns[2][launch_index] = ns.z();
+    }
 
-        params.out_dp_dv_x[launch_index] = dp_dv.x();
-        params.out_dp_dv_y[launch_index] = dp_dv.y();
-        params.out_dp_dv_z[launch_index] = dp_dv.z();
+    if (params.has_dp_duv()) {
+        params.out_dp_du[0][launch_index] = dp_du.x();
+        params.out_dp_du[1][launch_index] = dp_du.y();
+        params.out_dp_du[2][launch_index] = dp_du.z();
+
+        params.out_dp_dv[0][launch_index] = dp_dv.x();
+        params.out_dp_dv[1][launch_index] = dp_dv.y();
+        params.out_dp_dv[2][launch_index] = dp_dv.z();
     }
 }
 

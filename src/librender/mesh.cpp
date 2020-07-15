@@ -491,7 +491,6 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
     si.n = normalize(cross(dp0, dp1));
 
     // Texture coordinates (if available)
-    std::tie(si.dp_du, si.dp_dv) = coordinate_system(si.n);
     si.uv = Point2f(b1, b2);
     if (has_vertex_texcoords() && likely(has_flag(flags, HitComputeFlags::UV))) {
         Point2f uv0 = vertex_texcoord(fi[0], active),
@@ -500,16 +499,20 @@ Mesh<Float, Spectrum>::compute_surface_interaction(const Ray3f &ray,
 
         si.uv = uv0 * b0 + uv1 * b1 + uv2 * b2;
 
-        Vector2f duv0 = uv1 - uv0,
-                 duv1 = uv2 - uv0;
+        if (likely(has_flag(flags, HitComputeFlags::DPDUV))) {
+            Vector2f duv0 = uv1 - uv0,
+                    duv1 = uv2 - uv0;
 
-        Float det     = fmsub(duv0.x(), duv1.y(), duv0.y() * duv1.x()),
-              inv_det = rcp(det);
+            Float det     = fmsub(duv0.x(), duv1.y(), duv0.y() * duv1.x()),
+                inv_det = rcp(det);
 
-        Mask valid = neq(det, 0.f);
+            Mask valid = neq(det, 0.f);
 
-        si.dp_du[valid] = fmsub( duv1.y(), dp0, duv0.y() * dp1) * inv_det;
-        si.dp_dv[valid] = fnmadd(duv1.x(), dp0, duv0.x() * dp1) * inv_det;
+            si.dp_du[valid] = fmsub( duv1.y(), dp0, duv0.y() * dp1) * inv_det;
+            si.dp_dv[valid] = fnmadd(duv1.x(), dp0, duv0.x() * dp1) * inv_det;
+        }
+    } else if (likely(has_flag(flags, HitComputeFlags::DPDUV))) {
+        std::tie(si.dp_du, si.dp_dv) = coordinate_system(si.n);
     }
 
     // Shading normal (if available)

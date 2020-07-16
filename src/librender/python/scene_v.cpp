@@ -33,7 +33,6 @@ MTS_PY_EXPORT(ShapeKDTree) {
 #endif
 }
 
-#if 1
 MTS_PY_EXPORT(Scene) {
     MTS_PY_IMPORT_TYPES(Scene, Integrator, SamplingIntegrator, MonteCarloIntegrator, Sensor)
     MTS_PY_CLASS(Scene, Object)
@@ -85,4 +84,3 @@ MTS_PY_EXPORT(Scene) {
         .def_method(Scene, shapes_require_gradient)
         .def("__repr__", &Scene::to_string);
 }
-#endif

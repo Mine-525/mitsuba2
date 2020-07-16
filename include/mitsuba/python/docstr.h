@@ -23,23 +23,169 @@
 #endif
 
 
+static const char *__doc_CUctx_st = R"doc()doc";
+
+static const char *__doc_CUstream_st = R"doc()doc";
+
+static const char *__doc_OptixAabb = R"doc()doc";
+
+static const char *__doc_OptixAabb_maxX = R"doc()doc";
+
+static const char *__doc_OptixAabb_maxY = R"doc()doc";
+
+static const char *__doc_OptixAabb_maxZ = R"doc()doc";
+
+static const char *__doc_OptixAabb_minX = R"doc()doc";
+
+static const char *__doc_OptixAabb_minY = R"doc()doc";
+
+static const char *__doc_OptixAabb_minZ = R"doc()doc";
+
+static const char *__doc_OptixAccelBufferSizes = R"doc()doc";
+
+static const char *__doc_OptixAccelBufferSizes_outputSizeInBytes = R"doc()doc";
+
+static const char *__doc_OptixAccelBufferSizes_tempSizeInBytes = R"doc()doc";
+
+static const char *__doc_OptixAccelBufferSizes_tempUpdateSizeInBytes = R"doc()doc";
+
+static const char *__doc_OptixAccelBuildOptions = R"doc()doc";
+
+static const char *__doc_OptixAccelBuildOptions_buildFlags = R"doc()doc";
+
+static const char *__doc_OptixAccelBuildOptions_motionOptions = R"doc()doc";
+
+static const char *__doc_OptixAccelBuildOptions_operation = R"doc()doc";
+
+static const char *__doc_OptixAccelEmitDesc = R"doc()doc";
+
+static const char *__doc_OptixAccelEmitDesc_result = R"doc()doc";
+
+static const char *__doc_OptixAccelEmitDesc_type = R"doc()doc";
+
+static const char *__doc_OptixBuildInput = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_aabbBuffers = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_flags = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_numPrimitives = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_numSbtRecords = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_primitiveIndexOffset = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_sbtIndexOffsetBuffer = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_sbtIndexOffsetSizeInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_sbtIndexOffsetStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputCustomPrimitiveArray_strideInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputInstanceArray = R"doc()doc";
+
+static const char *__doc_OptixBuildInputInstanceArray_aabbs = R"doc()doc";
+
+static const char *__doc_OptixBuildInputInstanceArray_instances = R"doc()doc";
+
+static const char *__doc_OptixBuildInputInstanceArray_numAabbs = R"doc()doc";
+
+static const char *__doc_OptixBuildInputInstanceArray_numInstances = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_flags = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_indexBuffer = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_indexFormat = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_indexStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_numIndexTriplets = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_numSbtRecords = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_numVertices = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_preTransform = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_primitiveIndexOffset = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_sbtIndexOffsetBuffer = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_sbtIndexOffsetSizeInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_sbtIndexOffsetStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_vertexBuffers = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_vertexFormat = R"doc()doc";
+
+static const char *__doc_OptixBuildInputTriangleArray_vertexStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixBuildInput_type = R"doc()doc";
+
+static const char *__doc_OptixDeviceContextOptions = R"doc()doc";
+
+static const char *__doc_OptixDeviceContextOptions_logCallbackData = R"doc()doc";
+
+static const char *__doc_OptixDeviceContextOptions_logCallbackFunction = R"doc()doc";
+
+static const char *__doc_OptixDeviceContextOptions_logCallbackLevel = R"doc()doc";
+
+static const char *__doc_OptixDeviceContext_t = R"doc()doc";
+
 static const char *__doc_OptixHitGroupData = R"doc()doc";
 
 static const char *__doc_OptixHitGroupData_data = R"doc()doc";
 
 static const char *__doc_OptixHitGroupData_shape_ptr = R"doc()doc";
 
-static const char *__doc_OptixParams = R"doc(Launch-varying parameters)doc";
+static const char *__doc_OptixInstance = R"doc()doc";
 
-static const char *__doc_OptixParams_compute_surface_interaction = R"doc()doc";
+static const char *__doc_OptixInstance_flags = R"doc()doc";
+
+static const char *__doc_OptixInstance_instanceId = R"doc()doc";
+
+static const char *__doc_OptixInstance_pad = R"doc()doc";
+
+static const char *__doc_OptixInstance_sbtOffset = R"doc()doc";
+
+static const char *__doc_OptixInstance_transform = R"doc()doc";
+
+static const char *__doc_OptixInstance_traversableHandle = R"doc()doc";
+
+static const char *__doc_OptixInstance_visibilityMask = R"doc()doc";
+
+static const char *__doc_OptixModuleCompileOptions = R"doc()doc";
+
+static const char *__doc_OptixModuleCompileOptions_debugLevel = R"doc()doc";
+
+static const char *__doc_OptixModuleCompileOptions_maxRegisterCount = R"doc()doc";
+
+static const char *__doc_OptixModuleCompileOptions_optLevel = R"doc()doc";
+
+static const char *__doc_OptixModule_t = R"doc()doc";
+
+static const char *__doc_OptixMotionOptions = R"doc()doc";
+
+static const char *__doc_OptixMotionOptions_flags = R"doc()doc";
+
+static const char *__doc_OptixMotionOptions_numKeys = R"doc()doc";
+
+static const char *__doc_OptixMotionOptions_timeBegin = R"doc()doc";
+
+static const char *__doc_OptixMotionOptions_timeEnd = R"doc()doc";
+
+static const char *__doc_OptixParams = R"doc(Launch-varying parameters)doc";
 
 static const char *__doc_OptixParams_handle = R"doc()doc";
 
-static const char *__doc_OptixParams_in_dx = R"doc()doc";
-
-static const char *__doc_OptixParams_in_dy = R"doc()doc";
-
-static const char *__doc_OptixParams_in_dz = R"doc()doc";
+static const char *__doc_OptixParams_in_d = R"doc()doc";
 
 static const char *__doc_OptixParams_in_mask = R"doc()doc";
 
@@ -47,53 +193,119 @@ static const char *__doc_OptixParams_in_maxt = R"doc()doc";
 
 static const char *__doc_OptixParams_in_mint = R"doc()doc";
 
-static const char *__doc_OptixParams_in_ox = R"doc()doc";
+static const char *__doc_OptixParams_in_o = R"doc()doc";
 
-static const char *__doc_OptixParams_in_oy = R"doc()doc";
+static const char *__doc_OptixParams_out_dp_du = R"doc()doc";
 
-static const char *__doc_OptixParams_in_oz = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_du_x = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_du_y = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_du_z = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_dv_x = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_dv_y = R"doc()doc";
-
-static const char *__doc_OptixParams_out_dp_dv_z = R"doc()doc";
+static const char *__doc_OptixParams_out_dp_dv = R"doc()doc";
 
 static const char *__doc_OptixParams_out_hit = R"doc()doc";
 
-static const char *__doc_OptixParams_out_ng_x = R"doc()doc";
+static const char *__doc_OptixParams_out_ng = R"doc()doc";
 
-static const char *__doc_OptixParams_out_ng_y = R"doc()doc";
+static const char *__doc_OptixParams_out_ns = R"doc()doc";
 
-static const char *__doc_OptixParams_out_ng_z = R"doc()doc";
+static const char *__doc_OptixParams_out_p = R"doc()doc";
 
-static const char *__doc_OptixParams_out_ns_x = R"doc()doc";
+static const char *__doc_OptixParams_out_prim_index = R"doc()doc";
 
-static const char *__doc_OptixParams_out_ns_y = R"doc()doc";
-
-static const char *__doc_OptixParams_out_ns_z = R"doc()doc";
-
-static const char *__doc_OptixParams_out_p_x = R"doc()doc";
-
-static const char *__doc_OptixParams_out_p_y = R"doc()doc";
-
-static const char *__doc_OptixParams_out_p_z = R"doc()doc";
-
-static const char *__doc_OptixParams_out_primitive_id = R"doc()doc";
+static const char *__doc_OptixParams_out_prim_uv = R"doc()doc";
 
 static const char *__doc_OptixParams_out_shape_ptr = R"doc()doc";
 
 static const char *__doc_OptixParams_out_t = R"doc()doc";
 
-static const char *__doc_OptixParams_out_u = R"doc()doc";
+static const char *__doc_OptixParams_out_uv = R"doc()doc";
 
-static const char *__doc_OptixParams_out_v = R"doc()doc";
+static const char *__doc_OptixPipelineCompileOptions = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_exceptionFlags = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_numAttributeValues = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_numPayloadValues = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_pipelineLaunchParamsVariableName = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_traversableGraphFlags = R"doc()doc";
+
+static const char *__doc_OptixPipelineCompileOptions_usesMotionBlur = R"doc()doc";
+
+static const char *__doc_OptixPipelineLinkOptions = R"doc()doc";
+
+static const char *__doc_OptixPipelineLinkOptions_debugLevel = R"doc()doc";
+
+static const char *__doc_OptixPipelineLinkOptions_maxTraceDepth = R"doc()doc";
+
+static const char *__doc_OptixPipelineLinkOptions_overrideUsesMotionBlur = R"doc()doc";
+
+static const char *__doc_OptixPipeline_t = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupCallables = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupCallables_entryFunctionNameCC = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupCallables_entryFunctionNameDC = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupCallables_moduleCC = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupCallables_moduleDC = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupDesc = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupDesc_flags = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupDesc_kind = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_entryFunctionNameAH = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_entryFunctionNameCH = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_entryFunctionNameIS = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_moduleAH = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_moduleCH = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupHitgroup_moduleIS = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupOptions = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupOptions_placeholder = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupSingleModule = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupSingleModule_entryFunctionName = R"doc()doc";
+
+static const char *__doc_OptixProgramGroupSingleModule_module = R"doc()doc";
+
+static const char *__doc_OptixProgramGroup_t = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_callablesRecordBase = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_callablesRecordCount = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_callablesRecordStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_exceptionRecord = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_hitgroupRecordBase = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_hitgroupRecordCount = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_hitgroupRecordStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_missRecordBase = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_missRecordCount = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_missRecordStrideInBytes = R"doc()doc";
+
+static const char *__doc_OptixShaderBindingTable_raygenRecord = R"doc()doc";
 
 static const char *__doc_enoki_operator_lshift = R"doc(Prints the canonical representation of a PCG32 object.)doc";
 
@@ -2600,25 +2812,23 @@ Returns the warped sample and associated probability density.)doc";
 
 static const char *__doc_mitsuba_Hierarchical2D_to_string = R"doc()doc";
 
-static const char *__doc_mitsuba_HitComputeFlags = R"doc()doc";
+static const char *__doc_mitsuba_HitComputeFlags =
+R"doc(This list of flags is used to determine which members of
+SurfaceInteraction should be computed when calling
+compute_surface_interaction().
+
+It also specifies whether the SurfaceInteraction should be
+differentiable with respect to the shapes parameters.)doc";
 
 static const char *__doc_mitsuba_HitComputeFlags_All = R"doc(Compute all fields of the surface interaction data structure (default))doc";
-
-static const char *__doc_mitsuba_HitComputeFlags_AllDifferentiable =
-R"doc(Compute all fields of the surface interaction data structure in a
-differentiable way)doc";
 
 static const char *__doc_mitsuba_HitComputeFlags_AllNonDifferentiable =
 R"doc(Compute all fields of the surface interaction data structure in a non
 differentiable way)doc";
 
-static const char *__doc_mitsuba_HitComputeFlags_Automatic = R"doc(Differentiability will depend on global parameter)doc";
-
 static const char *__doc_mitsuba_HitComputeFlags_DPDUV = R"doc(The partial derivative of the UV coordinates will be computed)doc";
 
-static const char *__doc_mitsuba_HitComputeFlags_Differentiable =
-R"doc(Force computed fields to be differentiable w.r.t. the shape's
-parameters)doc";
+static const char *__doc_mitsuba_HitComputeFlags_Differentiable = R"doc(Differentiability is requested)doc";
 
 static const char *__doc_mitsuba_HitComputeFlags_Minimal = R"doc(Compute position and geometric normal)doc";
 
@@ -3561,6 +3771,8 @@ static const char *__doc_mitsuba_Mesh_m_name = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_m_parameterization = R"doc(Optional: used in eval_parameterization())doc";
 
+static const char *__doc_mitsuba_Mesh_m_vertex_buffer_ptr = R"doc()doc";
+
 static const char *__doc_mitsuba_Mesh_m_vertex_count = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_m_vertex_normals_buf = R"doc()doc";
@@ -3571,7 +3783,13 @@ static const char *__doc_mitsuba_Mesh_m_vertex_texcoords_buf = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_normal_derivative = R"doc()doc";
 
+static const char *__doc_mitsuba_Mesh_optix_build_input = R"doc()doc";
+
+static const char *__doc_mitsuba_Mesh_optix_prepare_geometry = R"doc()doc";
+
 static const char *__doc_mitsuba_Mesh_parameters_changed = R"doc()doc";
+
+static const char *__doc_mitsuba_Mesh_parameters_require_gradient = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_pdf_position = R"doc()doc";
 
@@ -4168,7 +4386,7 @@ an important 2D quantity, such as the texture coordinates on a
 triangle mesh or a position on the aperture of a sensor. When
 applicable, such positions are stored in the ``uv`` attribute.)doc";
 
-static const char *__doc_mitsuba_PreliminaryIntersection = R"doc(Ray intersection data structure)doc";
+static const char *__doc_mitsuba_PreliminaryIntersection = R"doc(Stores preliminary information related to a ray intersection)doc";
 
 static const char *__doc_mitsuba_PreliminaryIntersection_PreliminaryIntersection = R"doc()doc";
 
@@ -4178,7 +4396,18 @@ static const char *__doc_mitsuba_PreliminaryIntersection_PreliminaryIntersection
 
 static const char *__doc_mitsuba_PreliminaryIntersection_PreliminaryIntersection_4 = R"doc()doc";
 
-static const char *__doc_mitsuba_PreliminaryIntersection_compute_surface_interaction = R"doc(Compute the surface interaction TODO)doc";
+static const char *__doc_mitsuba_PreliminaryIntersection_compute_surface_interaction =
+R"doc(Compute and return detailed information related to a surface
+interaction
+
+Parameter ``ray``:
+    Ray associated with the ray intersection
+
+Parameter ``flags``:
+    Flags specifying which information should be computed
+
+Returns:
+    A data structure containing the detailed information)doc";
 
 static const char *__doc_mitsuba_PreliminaryIntersection_instance = R"doc(Stores a pointer to the parent instance (if applicable))doc";
 
@@ -5075,6 +5304,8 @@ static const char *__doc_mitsuba_Scene_m_sensors = R"doc()doc";
 
 static const char *__doc_mitsuba_Scene_m_shapes = R"doc()doc";
 
+static const char *__doc_mitsuba_Scene_m_shapes_require_gradient = R"doc()doc";
+
 static const char *__doc_mitsuba_Scene_parameters_changed = R"doc(Update internal state following a parameter update)doc";
 
 static const char *__doc_mitsuba_Scene_pdf_emitter_direction =
@@ -5176,6 +5407,8 @@ static const char *__doc_mitsuba_Scene_sensors_2 = R"doc(Return the list of sens
 static const char *__doc_mitsuba_Scene_shapes = R"doc(Return the list of shapes)doc";
 
 static const char *__doc_mitsuba_Scene_shapes_2 = R"doc(Return the list of shapes)doc";
+
+static const char *__doc_mitsuba_Scene_shapes_require_gradient = R"doc(Return whether any of the shape's parameters require gradient)doc";
 
 static const char *__doc_mitsuba_Scene_to_string = R"doc(Return a human-readable string representation of the scene contents.)doc";
 
@@ -5510,6 +5743,8 @@ static const char *__doc_mitsuba_Shape_m_interior_medium = R"doc()doc";
 
 static const char *__doc_mitsuba_Shape_m_mesh = R"doc()doc";
 
+static const char *__doc_mitsuba_Shape_m_optix_data_ptr = R"doc(OptiX hitgroup data buffer)doc";
+
 static const char *__doc_mitsuba_Shape_m_sensor = R"doc()doc";
 
 static const char *__doc_mitsuba_Shape_m_to_object = R"doc()doc";
@@ -5550,7 +5785,19 @@ static const char *__doc_mitsuba_Shape_operator_new_3 = R"doc()doc";
 
 static const char *__doc_mitsuba_Shape_operator_new_4 = R"doc()doc";
 
+static const char *__doc_mitsuba_Shape_optix_build_input = R"doc(Fill the OptixBuildInput struct)doc";
+
+static const char *__doc_mitsuba_Shape_optix_hitgroup_data =
+R"doc(Return a pointer (GPU memory) to the shape's OptiX hitgroup data
+buffer)doc";
+
+static const char *__doc_mitsuba_Shape_optix_prepare_geometry = R"doc(Prepare OptiX data buffers)doc";
+
 static const char *__doc_mitsuba_Shape_parameters_changed = R"doc()doc";
+
+static const char *__doc_mitsuba_Shape_parameters_require_gradient =
+R"doc(Return whether shape's parameters require gradients (default
+implementation return false))doc";
 
 static const char *__doc_mitsuba_Shape_pdf_direction =
 R"doc(Query the probability density of sample_direction()
@@ -6283,6 +6530,8 @@ R"doc(Return the emitter associated with the intersection (if any) \note
 Defined in scene.h)doc";
 
 static const char *__doc_mitsuba_SurfaceInteraction_has_uv_partials = R"doc()doc";
+
+static const char *__doc_mitsuba_SurfaceInteraction_initialize_local_sh_frame = R"doc(Initialize local shading frame using Gram-schmidt orthogonalization)doc";
 
 static const char *__doc_mitsuba_SurfaceInteraction_instance = R"doc(Stores a pointer to the parent instance (if applicable))doc";
 
@@ -8689,6 +8938,10 @@ static const char *__doc_mitsuba_operator_sub = R"doc(Subtracting two points sho
 
 static const char *__doc_mitsuba_operator_sub_2 = R"doc(Subtracting a vector from a point should always yield a point)doc";
 
+static const char *__doc_mitsuba_optix_initialize = R"doc(Try to load the OptiX library)doc";
+
+static const char *__doc_mitsuba_optix_shutdown = R"doc()doc";
+
 static const char *__doc_mitsuba_parse_fov = R"doc(Helper function to parse the field of view field of a camera)doc";
 
 static const char *__doc_mitsuba_pdf_rgb_spectrum =
@@ -8869,6 +9122,10 @@ Parameter ``eta_ti``:
     Relative index of refraction (transmitted / incident))doc";
 
 static const char *__doc_mitsuba_round_to_packet_size = R"doc(Round an integer to a multiple of the current packet size)doc";
+
+static const char *__doc_mitsuba_rt_check = R"doc()doc";
+
+static const char *__doc_mitsuba_rt_check_log = R"doc()doc";
 
 static const char *__doc_mitsuba_sample_rgb_spectrum =
 R"doc(Importance sample a "importance spectrum" that concentrates the

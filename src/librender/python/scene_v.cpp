@@ -57,7 +57,7 @@ MTS_PY_EXPORT(Scene) {
             vectorize(&Scene::pdf_emitter_direction),
             "ref"_a, "ds"_a, "active"_a = true)
         // Accessors
-        .def("bbox", &Scene::bbox, D(Scene, bbox))
+        .def_method(Scene, bbox)
         .def("sensors", py::overload_cast<>(&Scene::sensors), D(Scene, sensors))
         .def("emitters", py::overload_cast<>(&Scene::emitters), D(Scene, emitters))
         .def_method(Scene, environment)
@@ -82,6 +82,7 @@ MTS_PY_EXPORT(Scene) {
                 return py::cast(o);
             },
             D(Scene, integrator))
+        .def_method(Scene, shapes_require_gradient)
         .def("__repr__", &Scene::to_string);
 }
 #endif

@@ -525,19 +525,11 @@ Scene<Float, Spectrum>::ray_intersect_gpu(const Ray3f &ray_, HitComputeFlags fla
         OptixState &s = *(OptixState *) m_accel;
 
         if constexpr (is_diff_array_v<Float>) {
-            if (!has_flag(flags, HitComputeFlags::NonDifferentiable)) {
-                // TODO precompute this
-                bool differentiable = requires_gradient(ray_.o);
-                for (auto& s : m_shapes) {
-                    differentiable |= s->parameters_require_gradient();
-                    if (differentiable) break;
-                }
-
-                // Differentiable SurfaceInteraction needs to be computed outside of the OptiX kernel
-                if (differentiable) {
-                    auto pi = ray_intersect_preliminary_gpu(ray_, active);
-                    return pi.compute_surface_interaction(ray_, flags, active);
-                }
+            // Differentiable SurfaceInteraction needs to be computed outside of the OptiX kernel
+            if (!has_flag(flags, HitComputeFlags::NonDifferentiable) &&
+                (requires_gradient(ray_.o) || shapes_require_gradient())) {
+                auto pi = ray_intersect_preliminary_gpu(ray_, active);
+                return pi.compute_surface_interaction(ray_, flags, active);
             }
         }
 

@@ -96,6 +96,8 @@ MTS_VARIANT Scene<Float, Spectrum>::Scene(const Properties &props) {
     // Create emitters' shapes (environment luminaires)
     for (Emitter *emitter: m_emitters)
         emitter->set_scene(this);
+
+    m_shapes_require_gradient = false;
 }
 
 MTS_VARIANT Scene<Float, Spectrum>::~Scene() {
@@ -251,6 +253,15 @@ MTS_VARIANT void Scene<Float, Spectrum>::parameters_changed(const std::vector<st
             accel_parameters_changed_gpu();
         else {
             // TODO update Embree BVH or Mitsuba kdtree if necessary
+        }
+    }
+
+    // Checks whether any of the shape's parameters require gradient
+    m_shapes_require_gradient = false;
+    if constexpr (is_diff_array_v<Float>) {
+        for (auto& s : m_shapes) {
+            m_shapes_require_gradient |= s->parameters_require_gradient();
+            if (m_shapes_require_gradient) break;
         }
     }
 }

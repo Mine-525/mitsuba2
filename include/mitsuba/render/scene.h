@@ -168,6 +168,9 @@ public:
     /// Update internal state following a parameter update
     void parameters_changed(const std::vector<std::string> &/*keys*/ = {}) override;
 
+    /// Return whether any of the shape's parameters require gradient
+    bool shapes_require_gradient() const { return m_shapes_require_gradient; };
+
     /// Return a human-readable string representation of the scene contents.
     virtual std::string to_string() const override;
 
@@ -214,6 +217,8 @@ protected:
     std::vector<ref<Object>> m_children;
     ref<Integrator> m_integrator;
     ref<Emitter> m_environment;
+
+    bool m_shapes_require_gradient;
 };
 
 /// Dummy function which can be called to ensure that the librender shared library is loaded

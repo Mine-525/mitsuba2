@@ -1035,7 +1035,7 @@ BB3_20:
 	.reg .pred 	%p<13>;
 	.reg .b16 	%rs<2>;
 	.reg .f32 	%f<158>;
-	.reg .b32 	%r<18>;
+	.reg .b32 	%r<17>;
 	.reg .b64 	%rd<126>;
 
 
@@ -1072,6 +1072,9 @@ BB4_2:
 	call (%rd21), _optix_get_sbt_data_ptr_64, ();
 	// inline asm
 	// inline asm
+	call (%r10), _optix_read_primitive_idx, ();
+	// inline asm
+	// inline asm
 	call (%f56), _optix_get_ray_tmax, ();
 	// inline asm
 	// inline asm
@@ -1091,7 +1094,6 @@ BB4_2:
 	cvta.to.global.u64 	%rd28, %rd27;
 	mul.wide.u32 	%rd29, %r1, 4;
 	add.s64 	%rd30, %rd28, %rd29;
-	mov.u32 	%r10, 0;
 	st.global.u32 	[%rd30], %r10;
 	cvta.to.global.u64 	%rd31, %rd3;
 	add.s64 	%rd32, %rd31, %rd29;
@@ -1111,27 +1113,24 @@ BB4_4:
 	mov.f32 	%f59, 0f3F800000;
 	sub.f32 	%f60, %f59, %f156;
 	sub.f32 	%f4, %f60, %f157;
-	ld.u64 	%rd39, [%rd4];
-	// inline asm
-	call (%r11), _optix_read_primitive_idx, ();
-	// inline asm
-	mul.wide.u32 	%rd40, %r11, 3;
-	shl.b64 	%rd41, %rd40, 2;
-	add.s64 	%rd42, %rd39, %rd41;
-	ld.u32 	%r12, [%rd42];
-	cvt.u64.u32	%rd5, %r12;
-	mul.wide.u32 	%rd6, %r12, 3;
+	mul.wide.u32 	%rd39, %r10, 3;
+	ld.u64 	%rd40, [%rd4];
+	shl.b64 	%rd41, %rd39, 2;
+	add.s64 	%rd42, %rd40, %rd41;
+	ld.u32 	%r11, [%rd42];
+	cvt.u64.u32	%rd5, %r11;
+	mul.wide.u32 	%rd6, %r11, 3;
 	ld.u64 	%rd43, [%rd4+8];
 	shl.b64 	%rd44, %rd6, 2;
 	add.s64 	%rd45, %rd43, %rd44;
-	ld.u32 	%r13, [%rd42+4];
-	cvt.u64.u32	%rd7, %r13;
-	mul.wide.u32 	%rd8, %r13, 3;
+	ld.u32 	%r12, [%rd42+4];
+	cvt.u64.u32	%rd7, %r12;
+	mul.wide.u32 	%rd8, %r12, 3;
 	shl.b64 	%rd46, %rd8, 2;
 	add.s64 	%rd47, %rd43, %rd46;
-	ld.u32 	%r14, [%rd42+8];
-	cvt.u64.u32	%rd9, %r14;
-	mul.wide.u32 	%rd10, %r14, 3;
+	ld.u32 	%r13, [%rd42+8];
+	cvt.u64.u32	%rd9, %r13;
+	mul.wide.u32 	%rd10, %r13, 3;
 	shl.b64 	%rd48, %rd10, 2;
 	add.s64 	%rd49, %rd43, %rd48;
 	ld.f32 	%f61, [%rd45];
@@ -1286,10 +1285,10 @@ BB4_7:
 	bra.uni 	BB4_13;
 
 BB4_12:
-	mov.b32 	 %r15, %f16;
-	and.b32  	%r16, %r15, -2147483648;
-	or.b32  	%r17, %r16, 1065353216;
-	mov.b32 	 %f138, %r17;
+	mov.b32 	 %r14, %f16;
+	and.b32  	%r15, %r14, -2147483648;
+	or.b32  	%r16, %r15, 1065353216;
+	mov.b32 	 %f138, %r16;
 	add.f32 	%f139, %f16, %f138;
 	mov.f32 	%f140, 0fBF800000;
 	div.rn.f32 	%f141, %f140, %f139;
@@ -1317,7 +1316,7 @@ BB4_13:
 	cvta.to.global.u64 	%rd69, %rd68;
 	mul.wide.u32 	%rd70, %r1, 4;
 	add.s64 	%rd71, %rd69, %rd70;
-	st.global.u32 	[%rd71], %r11;
+	st.global.u32 	[%rd71], %r10;
 	ld.const.u64 	%rd72, [params+160];
 	cvta.to.global.u64 	%rd73, %rd72;
 	add.s64 	%rd74, %rd73, %rd70;

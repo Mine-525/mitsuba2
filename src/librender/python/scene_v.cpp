@@ -37,10 +37,15 @@ MTS_PY_EXPORT(Scene) {
     MTS_PY_IMPORT_TYPES(Scene, Integrator, SamplingIntegrator, MonteCarloIntegrator, Sensor)
     MTS_PY_CLASS(Scene, Object)
         .def(py::init<const Properties>())
+        .def("ray_intersect_preliminary",
+             vectorize(&Scene::ray_intersect_preliminary),
+             "ray"_a, "active"_a = true, D(Scene, ray_intersect_preliminary))
         .def("ray_intersect",
              vectorize(py::overload_cast<const Ray3f &, Mask>(&Scene::ray_intersect, py::const_)),
              "ray"_a, "active"_a = true, D(Scene, ray_intersect))
-        // TODO add new bindings
+        .def("ray_intersect",
+             vectorize(py::overload_cast<const Ray3f &, HitComputeFlags, Mask>(&Scene::ray_intersect, py::const_)),
+             "ray"_a, "flags"_a, "active"_a = true, D(Scene, ray_intersect))
         .def("ray_test",
             vectorize(&Scene::ray_test),
             "ray"_a, "active"_a = true)
@@ -81,6 +86,6 @@ MTS_PY_EXPORT(Scene) {
                 return py::cast(o);
             },
             D(Scene, integrator))
-        .def_method(Scene, shapes_require_gradient)
+        .def_method(Scene, shapes_grad_enabled)
         .def("__repr__", &Scene::to_string);
 }

@@ -649,8 +649,8 @@ std::ostream &operator<<(std::ostream &os, const PreliminaryIntersection<Float, 
         << "  prim_uv = " << pi.prim_uv << "," << std::endl
         << "  prim_index = " << pi.prim_index << "," << std::endl
         << "  shape_index = " << pi.shape_index << "," << std::endl
-        << "  shape = " << pi.shape << "," << std::endl
-        << "  instance = " << pi.instance << "," << std::endl
+        << "  shape = " << string::indent(pi.shape, 6) << "," << std::endl
+        << "  instance = " << string::indent(pi.instance, 6) << "," << std::endl
         << "]";
     }
     return os;

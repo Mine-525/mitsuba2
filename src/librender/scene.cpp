@@ -97,7 +97,7 @@ MTS_VARIANT Scene<Float, Spectrum>::Scene(const Properties &props) {
     for (Emitter *emitter: m_emitters)
         emitter->set_scene(this);
 
-    m_shapes_require_gradient = false;
+    m_shapes_grad_enabled = false;
 }
 
 MTS_VARIANT Scene<Float, Spectrum>::~Scene() {
@@ -257,11 +257,11 @@ MTS_VARIANT void Scene<Float, Spectrum>::parameters_changed(const std::vector<st
     }
 
     // Checks whether any of the shape's parameters require gradient
-    m_shapes_require_gradient = false;
+    m_shapes_grad_enabled = false;
     if constexpr (is_diff_array_v<Float>) {
         for (auto& s : m_shapes) {
-            m_shapes_require_gradient |= s->parameters_require_gradient();
-            if (m_shapes_require_gradient) break;
+            m_shapes_grad_enabled |= s->parameters_grad_enabled();
+            if (m_shapes_grad_enabled) break;
         }
     }
 }

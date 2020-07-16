@@ -78,7 +78,7 @@ template <typename Float, typename Spectrum>
 class Cylinder final : public Shape<Float, Spectrum> {
 public:
     MTS_IMPORT_BASE(Shape, m_to_world, m_to_object, set_children,
-                    get_children_string, parameters_require_gradient)
+                    get_children_string, parameters_grad_enabled)
     MTS_IMPORT_TYPES()
 
     using typename Base::ScalarIndex;
@@ -288,6 +288,7 @@ public:
                       select(z_pos_near >= 0 && z_pos_near <= length && near_t >= mint,
                              Float(near_t), Float(far_t)),
                       math::Infinity<Float>);
+        pi.prim_index = 0;
         pi.shape = this;
 
         return pi;
@@ -341,7 +342,7 @@ public:
 
         bool differentiable = false;
         if constexpr (is_diff_array_v<Float>)
-            differentiable = requires_gradient(ray.o) || parameters_require_gradient(); // TODO check for ray struct
+            differentiable = requires_gradient(ray.o) || parameters_grad_enabled(); // TODO check for ray struct
 
         // Recompute ray intersection to get differentiable prim_uv and t
         if (differentiable && !has_flag(flags, HitComputeFlags::NonDifferentiable))

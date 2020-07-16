@@ -169,7 +169,7 @@ public:
     void parameters_changed(const std::vector<std::string> &/*keys*/ = {}) override;
 
     /// Return whether any of the shape's parameters require gradient
-    bool shapes_require_gradient() const { return m_shapes_require_gradient; };
+    bool shapes_grad_enabled() const { return m_shapes_grad_enabled; };
 
     /// Return a human-readable string representation of the scene contents.
     virtual std::string to_string() const override;
@@ -218,7 +218,7 @@ protected:
     ref<Integrator> m_integrator;
     ref<Emitter> m_environment;
 
-    bool m_shapes_require_gradient;
+    bool m_shapes_grad_enabled;
 };
 
 /// Dummy function which can be called to ensure that the librender shared library is loaded

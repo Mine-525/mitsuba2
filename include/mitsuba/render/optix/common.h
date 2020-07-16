@@ -56,11 +56,11 @@ using namespace optix;
 __device__ void write_output_pi_params(OptixParams &params,
                                        unsigned int launch_index,
                                        unsigned long long shape_ptr,
-                                       unsigned int prim_id,
+                                       unsigned int prim_index,
                                        const Vector2f &prim_uv,
                                        float t) {
     params.out_shape_ptr[launch_index] = shape_ptr;
-    params.out_prim_index[launch_index] = prim_id;
+    params.out_prim_index[launch_index] = prim_index;
 
     params.out_prim_uv[0][launch_index] = prim_uv.x();
     params.out_prim_uv[1][launch_index] = prim_uv.y();
@@ -71,7 +71,7 @@ __device__ void write_output_pi_params(OptixParams &params,
 __device__ void write_output_si_params(OptixParams &params,
                                        unsigned int launch_index,
                                        unsigned long long shape_ptr,
-                                       unsigned int prim_id,
+                                       unsigned int prim_index,
                                        const Vector3f &p,
                                        const Vector2f &uv,
                                        const Vector3f &ns,
@@ -81,7 +81,7 @@ __device__ void write_output_si_params(OptixParams &params,
                                        float t) {
 
     params.out_shape_ptr[launch_index] = shape_ptr;
-    params.out_prim_index[launch_index] = prim_id;
+    params.out_prim_index[launch_index] = prim_index;
 
     params.out_p[0][launch_index] = p.x();
     params.out_p[1][launch_index] = p.y();

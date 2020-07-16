@@ -3789,7 +3789,7 @@ static const char *__doc_mitsuba_Mesh_optix_prepare_geometry = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_parameters_changed = R"doc()doc";
 
-static const char *__doc_mitsuba_Mesh_parameters_require_gradient = R"doc()doc";
+static const char *__doc_mitsuba_Mesh_parameters_grad_enabled = R"doc()doc";
 
 static const char *__doc_mitsuba_Mesh_pdf_position = R"doc()doc";
 
@@ -5304,7 +5304,7 @@ static const char *__doc_mitsuba_Scene_m_sensors = R"doc()doc";
 
 static const char *__doc_mitsuba_Scene_m_shapes = R"doc()doc";
 
-static const char *__doc_mitsuba_Scene_m_shapes_require_gradient = R"doc()doc";
+static const char *__doc_mitsuba_Scene_m_shapes_grad_enabled = R"doc()doc";
 
 static const char *__doc_mitsuba_Scene_parameters_changed = R"doc(Update internal state following a parameter update)doc";
 
@@ -5408,7 +5408,7 @@ static const char *__doc_mitsuba_Scene_shapes = R"doc(Return the list of shapes)
 
 static const char *__doc_mitsuba_Scene_shapes_2 = R"doc(Return the list of shapes)doc";
 
-static const char *__doc_mitsuba_Scene_shapes_require_gradient = R"doc(Return whether any of the shape's parameters require gradient)doc";
+static const char *__doc_mitsuba_Scene_shapes_grad_enabled = R"doc(Return whether any of the shape's parameters require gradient)doc";
 
 static const char *__doc_mitsuba_Scene_to_string = R"doc(Return a human-readable string representation of the scene contents.)doc";
 
@@ -5795,7 +5795,7 @@ static const char *__doc_mitsuba_Shape_optix_prepare_geometry = R"doc(Prepare Op
 
 static const char *__doc_mitsuba_Shape_parameters_changed = R"doc()doc";
 
-static const char *__doc_mitsuba_Shape_parameters_require_gradient =
+static const char *__doc_mitsuba_Shape_parameters_grad_enabled =
 R"doc(Return whether shape's parameters require gradients (default
 implementation return false))doc";
 

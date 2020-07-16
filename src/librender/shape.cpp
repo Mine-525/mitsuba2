@@ -396,7 +396,7 @@ void Shape<Float, Spectrum>::parameters_changed(const std::vector<std::string> &
         m_sensor->parameters_changed({"parent"});
 }
 
-MTS_VARIANT bool Shape<Float, Spectrum>::parameters_require_gradient() const {
+MTS_VARIANT bool Shape<Float, Spectrum>::parameters_grad_enabled() const {
     return false;
 }
 

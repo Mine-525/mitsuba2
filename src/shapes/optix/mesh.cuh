@@ -31,6 +31,7 @@ extern "C" __global__ void __closesthit__mesh() {
     } else {
         const OptixHitGroupData *sbt_data = (OptixHitGroupData *) optixGetSbtDataPointer();
         OptixMeshData *mesh = (OptixMeshData *)sbt_data->data;
+        unsigned int prim_index = optixGetPrimitiveIndex();
 
         float t = optixGetRayTmax();
         float2 float2_uv = optixGetTriangleBarycentrics();
@@ -38,7 +39,7 @@ extern "C" __global__ void __closesthit__mesh() {
 
         // Early return for ray_intersect_preliminary call
         if (params.is_ray_intersect_preliminary()) {
-            write_output_pi_params(params, launch_index, sbt_data->shape_ptr, 0, prim_uv, t);
+            write_output_pi_params(params, launch_index, sbt_data->shape_ptr, prim_index, prim_uv, t);
             return;
         }
 
@@ -50,7 +51,7 @@ extern "C" __global__ void __closesthit__mesh() {
               uv1 = uv.x(),
               uv2 = uv.y();
 
-        Vector3u face = load_3d(mesh->faces, optixGetPrimitiveIndex());
+        Vector3u face = load_3d(mesh->faces, prim_index);
 
         Vector3f p0 = load_3d(mesh->vertex_positions, face.x()),
                  p1 = load_3d(mesh->vertex_positions, face.y()),
@@ -66,8 +67,8 @@ extern "C" __global__ void __closesthit__mesh() {
         Vector3f ns = ng;
         if (params.has_ns() && mesh->vertex_normals != nullptr) {
             Vector3f n0 =  load_3d(mesh->vertex_normals, face.x()),
-                        n1 =  load_3d(mesh->vertex_normals, face.y()),
-                        n2 =  load_3d(mesh->vertex_normals, face.z());
+                     n1 =  load_3d(mesh->vertex_normals, face.y()),
+                     n2 =  load_3d(mesh->vertex_normals, face.z());
 
             ns = normalize(n0 * uv0 + n1 * uv1 + n2 * uv2);
         }
@@ -95,10 +96,8 @@ extern "C" __global__ void __closesthit__mesh() {
             coordinate_system(ng, dp_du, dp_dv);
         }
 
-        write_output_si_params(params, launch_index,
-                               sbt_data->shape_ptr,
-                               optixGetPrimitiveIndex(),
-                               p, uv, ns, ng, dp_du, dp_dv, t);
+        write_output_si_params(params, launch_index, sbt_data->shape_ptr,
+                               prim_index, p, uv, ns, ng, dp_du, dp_dv, t);
     }
 }
 #endif

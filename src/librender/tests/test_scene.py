@@ -70,7 +70,7 @@ def test02_shapes(variant_scalar_rgb):
 
 
 @fresolver_append_path
-def test03_shapes_parameters_require_gradient(variant_gpu_autodiff_rgb):
+def test03_shapes_parameters_grad_enabled(variant_gpu_autodiff_rgb):
     from mitsuba.core.xml import load_string
     from mitsuba.python.util import traverse
 
@@ -84,7 +84,7 @@ def test03_shapes_parameters_require_gradient(variant_gpu_autodiff_rgb):
     """)
 
     # Initial scene should always return False
-    assert scene.shapes_require_gradient() == False
+    assert scene.shapes_grad_enabled() == False
 
     # Get scene parameters
     params = traverse(scene)
@@ -94,11 +94,11 @@ def test03_shapes_parameters_require_gradient(variant_gpu_autodiff_rgb):
     ek.set_requires_gradient(params[bsdf_param_key])
     params.set_dirty(bsdf_param_key)
     params.update()
-    assert scene.shapes_require_gradient() == False
+    assert scene.shapes_grad_enabled() == False
 
     # When setting one of the shape's param to require gradient, method should return True
     shape_param_key = 'box.vertex_positions_buf'
     ek.set_requires_gradient(params[shape_param_key])
     params.set_dirty(shape_param_key)
     params.update()
-    assert scene.shapes_require_gradient() == True
+    assert scene.shapes_grad_enabled() == True

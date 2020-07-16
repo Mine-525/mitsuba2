@@ -411,7 +411,7 @@ public:
     void parameters_changed(const std::vector<std::string> &/*keys*/ = {}) override;
 
     /// Return whether shape's parameters require gradients (default implementation return false)
-    virtual bool parameters_require_gradient() const;
+    virtual bool parameters_grad_enabled() const;
 
     //! @}
     // =============================================================

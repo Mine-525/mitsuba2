@@ -233,8 +233,9 @@ MTS_PY_EXPORT(PreliminaryIntersection) {
         // Methods
         .def(py::init<>(), D(PreliminaryIntersection, PreliminaryIntersection))
         .def("is_valid", &PreliminaryIntersection3f::is_valid, D(PreliminaryIntersection, is_valid))
-        // .def("compute_surface_interaction", &PreliminaryIntersection3f::compute_surface_interaction,
-            //  D(PreliminaryIntersection, compute_surface_interaction), "ray"_a, "flags"_a, "active"_a)
+        .def("compute_surface_interaction", &PreliminaryIntersection3f::compute_surface_interaction,
+             D(PreliminaryIntersection, compute_surface_interaction),
+             "ray"_a, "flags"_a = HitComputeFlags::All, "active"_a = true)
         .def_repr(PreliminaryIntersection3f);
 
     // TODO bind slicing operator

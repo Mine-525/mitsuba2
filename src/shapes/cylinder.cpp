@@ -77,7 +77,8 @@ A simple example for instantiating a cylinder, whose interior is visible:
 template <typename Float, typename Spectrum>
 class Cylinder final : public Shape<Float, Spectrum> {
 public:
-    MTS_IMPORT_BASE(Shape, m_to_world, m_to_object, set_children, get_children_string)
+    MTS_IMPORT_BASE(Shape, m_to_world, m_to_object, set_children,
+                    get_children_string, parameters_require_gradient)
     MTS_IMPORT_TYPES()
 
     using typename Base::ScalarIndex;
@@ -340,7 +341,7 @@ public:
 
         bool differentiable = false;
         if constexpr (is_diff_array_v<Float>)
-            differentiable = requires_gradient(ray.o); // TODO check for ray struct
+            differentiable = requires_gradient(ray.o) || parameters_require_gradient(); // TODO check for ray struct
 
         // Recompute ray intersection to get differentiable prim_uv and t
         if (differentiable && !has_flag(flags, HitComputeFlags::NonDifferentiable))

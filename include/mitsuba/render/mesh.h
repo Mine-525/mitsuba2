@@ -244,6 +244,7 @@ public:
 
     void traverse(TraversalCallback *callback) override;
     void parameters_changed(const std::vector<std::string> &/*keys*/ = {}) override;
+    bool parameters_require_gradient() const override;
 
     /// Return a human-readable string representation of the shape contents.
     virtual std::string to_string() const override;

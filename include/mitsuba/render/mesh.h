@@ -220,7 +220,7 @@ public:
         Float t = dot(e2, qvec) * inv_det;
         active &= t >= ray.mint && t <= ray.maxt;
 
-        PreliminaryIntersection3f pi;
+        PreliminaryIntersection3f pi = zero<PreliminaryIntersection3f>();
         pi.t = select(active, t, math::Infinity<Float>);
         pi.prim_uv = Point2f(u, v);
         pi.prim_index = index;

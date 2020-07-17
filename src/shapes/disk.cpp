@@ -159,10 +159,9 @@ public:
                         && t <= ray.maxt
                         && local.x()*local.x() + local.y()*local.y() <= 1;
 
-        PreliminaryIntersection3f pi;
+        PreliminaryIntersection3f pi = zero<PreliminaryIntersection3f>();
         pi.t = select(active, t, math::Infinity<Float>);
         pi.prim_uv = Point2f(local.x(), local.y());
-        pi.prim_index = 0;
         pi.shape = this;
 
         return pi;

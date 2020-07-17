@@ -249,23 +249,25 @@ public:
                                                         Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
+        using Double = std::conditional_t<is_cuda_array_v<Float>, Float, Float64>;
+
         Ray3f ray = m_to_object.transform_affine(ray_);
-        Float64 mint = Float64(ray.mint),
-                maxt = Float64(ray.maxt);
+        Double mint = Double(ray.mint),
+               maxt = Double(ray.maxt);
 
-        Float64 ox = Float64(ray.o.x()),
-                oy = Float64(ray.o.y()),
-                oz = Float64(ray.o.z()),
-                dx = Float64(ray.d.x()),
-                dy = Float64(ray.d.y()),
-                dz = Float64(ray.d.z());
+        Double ox = Double(ray.o.x()),
+               oy = Double(ray.o.y()),
+               oz = Double(ray.o.z()),
+               dx = Double(ray.d.x()),
+               dy = Double(ray.d.y()),
+               dz = Double(ray.d.z());
 
-        double  radius = double(m_radius),
-                length = double(m_length);
+        scalar_t<Double> radius = scalar_t<Double>(m_radius),
+                         length = scalar_t<Double>(m_length);
 
-        Float64 A = sqr(dx) + sqr(dy),
-                B = 2.0 * (dx * ox + dy * oy),
-                C = sqr(ox) + sqr(oy) - sqr(radius);
+        Double A = sqr(dx) + sqr(dy),
+               B = scalar_t<Double>(2.f) * (dx * ox + dy * oy),
+               C = sqr(ox) + sqr(oy) - sqr(radius);
 
         auto [solution_found, near_t, far_t] =
             math::solve_quadratic(A, B, C);
@@ -273,8 +275,8 @@ public:
         // Cylinder doesn't intersect with the segment on the ray
         Mask out_bounds = !(near_t <= maxt && far_t >= mint); // NaN-aware conditionals
 
-        Float64 z_pos_near = oz + dz*near_t,
-                z_pos_far  = oz + dz*far_t;
+        Double z_pos_near = oz + dz*near_t,
+               z_pos_far  = oz + dz*far_t;
 
         // Cylinder fully contains the segment of the ray
         Mask in_bounds = near_t < mint && far_t > maxt;
@@ -283,12 +285,11 @@ public:
                   ((z_pos_near >= 0 && z_pos_near <= length && near_t >= mint) ||
                    (z_pos_far  >= 0 && z_pos_far <= length  && far_t <= maxt));
 
-        PreliminaryIntersection3f pi;
+        PreliminaryIntersection3f pi = zero<PreliminaryIntersection3f>();
         pi.t = select(active,
                       select(z_pos_near >= 0 && z_pos_near <= length && near_t >= mint,
                              Float(near_t), Float(far_t)),
                       math::Infinity<Float>);
-        pi.prim_index = 0;
         pi.shape = this;
 
         return pi;
@@ -297,31 +298,33 @@ public:
     Mask ray_test(const Ray3f &ray_, Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
+        using Double = std::conditional_t<is_cuda_array_v<Float>, Float, Float64>;
+
         Ray3f ray = m_to_object.transform_affine(ray_);
-        Float64 mint = Float64(ray.mint);
-        Float64 maxt = Float64(ray.maxt);
+        Double mint = Double(ray.mint);
+        Double maxt = Double(ray.maxt);
 
-        Float64 ox = Float64(ray.o.x()),
-                oy = Float64(ray.o.y()),
-                oz = Float64(ray.o.z()),
-                dx = Float64(ray.d.x()),
-                dy = Float64(ray.d.y()),
-                dz = Float64(ray.d.z());
+        Double ox = Double(ray.o.x()),
+               oy = Double(ray.o.y()),
+               oz = Double(ray.o.z()),
+               dx = Double(ray.d.x()),
+               dy = Double(ray.d.y()),
+               dz = Double(ray.d.z());
 
-        double  radius = double(m_radius),
-                length = double(m_length);
+        scalar_t<Double> radius = scalar_t<Double>(m_radius),
+                         length = scalar_t<Double>(m_length);
 
-        Float64 A = sqr(dx) + sqr(dy),
-                B = 2.0 * (dx * ox + dy * oy),
-                C = sqr(ox) + sqr(oy) - sqr(radius);
+        Double A = sqr(dx) + sqr(dy),
+               B = scalar_t<Double>(2.f) * (dx * ox + dy * oy),
+               C = sqr(ox) + sqr(oy) - sqr(radius);
 
         auto [solution_found, near_t, far_t] = math::solve_quadratic(A, B, C);
 
         // Cylinder doesn't intersect with the segment on the ray
         Mask out_bounds = !(near_t <= maxt && far_t >= mint); // NaN-aware conditionals
 
-        Float64 z_pos_near = oz + dz * near_t,
-                z_pos_far  = oz + dz * far_t;
+        Double z_pos_near = oz + dz * near_t,
+               z_pos_far  = oz + dz * far_t;
 
         // Cylinder fully contains the segment of the ray
         Mask in_bounds = near_t < mint && far_t > maxt;

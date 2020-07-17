@@ -278,15 +278,18 @@ public:
                                                         Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
-        Float64 mint = Float64(ray.mint);
-        Float64 maxt = Float64(ray.maxt);
+        using Double = std::conditional_t<is_cuda_array_v<Float>, Float, Float64>;
+        using Double3 = Vector<Double, 3>;
 
-        Vector3d o = Vector3d(ray.o) - Vector3d(m_center);
-        Vector3d d(ray.d);
+        Double mint = Double(ray.mint);
+        Double maxt = Double(ray.maxt);
 
-        Float64 A = squared_norm(d);
-        Float64 B = 2.0 * dot(o, d);
-        Float64 C = squared_norm(o) - sqr((double) m_radius);
+        Double3 o = Double3(ray.o) - Double3(m_center);
+        Double3 d(ray.d);
+
+        Double A = squared_norm(d);
+        Double B = scalar_t<Double>(2.f) * dot(o, d);
+        Double C = squared_norm(o) - sqr((scalar_t<Double>) m_radius);
 
         auto [solution_found, near_t, far_t] = math::solve_quadratic(A, B, C);
 
@@ -298,11 +301,10 @@ public:
 
         active &= solution_found && !out_bounds && !in_bounds;
 
-        PreliminaryIntersection3f pi;
+        PreliminaryIntersection3f pi = zero<PreliminaryIntersection3f>();
         pi.t = select(active,
                       select(near_t < mint, Float(far_t), Float(near_t)),
                       math::Infinity<Float>);
-        pi.prim_index = 0;
         pi.shape = this;
 
         return pi;
@@ -311,15 +313,18 @@ public:
     Mask ray_test(const Ray3f &ray, Mask active) const override {
         MTS_MASK_ARGUMENT(active);
 
-        Float64 mint = Float64(ray.mint);
-        Float64 maxt = Float64(ray.maxt);
+        using Double = std::conditional_t<is_cuda_array_v<Float>, Float, Float64>;
+        using Double3 = Vector<Double, 3>;
 
-        Vector3d o = Vector3d(ray.o) - Vector3d(m_center);
-        Vector3d d(ray.d);
+        Double mint = Double(ray.mint);
+        Double maxt = Double(ray.maxt);
 
-        Float64 A = squared_norm(d);
-        Float64 B = 2.0 * dot(o, d);
-        Float64 C = squared_norm(o) - sqr((double) m_radius);
+        Double3 o = Double3(ray.o) - Double3(m_center);
+        Double3 d(ray.d);
+
+        Double A = squared_norm(d);
+        Double B = scalar_t<Double>(2.f) * dot(o, d);
+        Double C = squared_norm(o) - sqr((scalar_t<Double>) m_radius);
 
         auto [solution_found, near_t, far_t] = math::solve_quadratic(A, B, C);
 

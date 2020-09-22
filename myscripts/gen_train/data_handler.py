@@ -217,7 +217,14 @@ def gen_train_image(data, height_map, debug):
 
     # Scale height map with scale factors as sampling
     map_scaled = cv2.resize(height_map, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_AREA)
+
+    return clip_scaled_map(map_scaled, [x_in, y_in], medium, x_range, y_range, x_min, y_max)
+
+def clip_scaled_map(map_scaled, pos_in, medium, x_range, y_range, x_min, y_max):
     height_scaled, width_scaled = map_scaled.shape
+
+    x_in = pos_in[0]
+    y_in = pos_in[1]
 
     # sigma_n of target meidum. sigma_n defines the range
     sigma_n = utils.get_sigman(medium)
@@ -228,7 +235,6 @@ def gen_train_image(data, height_map, debug):
 
     u_c = int((y_max - y_in) * height_scaled / y_range)
     v_c = int((x_in - x_min) * width_scaled / x_range)
-
 
     # Clip map_full_scaled in 255*255 from incident position
     distance_u_n = np.min([r_px_range, u_c])              # distance of u for negative direction
@@ -241,8 +247,6 @@ def gen_train_image(data, height_map, debug):
     map_clip = map_scaled[u_range[0]: u_range[1], v_range[0]:v_range[1]]
 
     height_clip, width_clip = map_clip.shape
-    len_height = height_clip * px_len
-    len_width = width_clip * px_len
 
     scale_map = 255 / (12 * sigma_n / px_len)
     map_clip = cv2.resize(map_clip, None, fx=scale_map, fy=scale_map, interpolation=cv2.INTER_AREA)
@@ -271,15 +275,6 @@ def gen_train_image(data, height_map, debug):
     V, U = np.meshgrid(uv_range, uv_range)
     mask = (V - canvas_c)**2 + (U - canvas_c)**2 <= r_px**2
     canvas[np.logical_not(mask)] = 0
-
-    if(False):
-        # Compare the scatter in the original height map and generated image
-        ax = plt.subplot(1,2,1)
-        ax.imshow(map_scaled, cmap="gray")
-        ax = plt.subplot(1,2,2)
-        ax.imshow(canvas, cmap="gray")
-
-        plt.show()
 
     return canvas
 

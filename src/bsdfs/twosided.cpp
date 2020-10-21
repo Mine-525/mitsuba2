@@ -180,6 +180,10 @@ public:
         return result;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_object("brdf_0", m_brdf[0].get());
         callback->put_object("brdf_1", m_brdf[1].get());

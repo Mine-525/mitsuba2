@@ -402,6 +402,8 @@ public:
                       const Vector3f &wo,
                       Mask active = true) const = 0;
 
+    virtual Int32 mesh_id(Mask active = true) const = 0;
+
     /**
      * \brief Evaluate un-scattered transmission component of the BSDF
      *
@@ -536,6 +538,7 @@ ENOKI_CALL_SUPPORT_TEMPLATE_BEGIN(mitsuba::BSDF)
     ENOKI_CALL_SUPPORT_METHOD(eval)
     ENOKI_CALL_SUPPORT_METHOD(eval_null_transmission)
     ENOKI_CALL_SUPPORT_METHOD(pdf)
+    ENOKI_CALL_SUPPORT_METHOD(mesh_id)
     ENOKI_CALL_SUPPORT_GETTER(flags, m_flags)
 
     auto needs_differentials() const {

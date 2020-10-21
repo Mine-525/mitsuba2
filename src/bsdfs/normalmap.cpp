@@ -146,6 +146,10 @@ public:
         return m_nested_bsdf->pdf(ctx, perturbed_si, perturbed_wo, active);
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     Frame3f frame(const SurfaceInteraction3f &si, Mask active) const {
         Normal3f n = fmadd(m_normalmap->eval_3(si, active), 2, -1.f);
 

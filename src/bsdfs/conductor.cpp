@@ -285,6 +285,10 @@ public:
         return 0.f;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_object("specular_reflectance", m_specular_reflectance.get());
         callback->put_object("eta", m_eta.get());

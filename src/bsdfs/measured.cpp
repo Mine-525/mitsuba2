@@ -380,6 +380,10 @@ public:
 #endif // MTS_SAMPLE_DIFFUSE
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     std::string to_string() const override {
         std::ostringstream oss;
         oss << "Measured[" << std::endl

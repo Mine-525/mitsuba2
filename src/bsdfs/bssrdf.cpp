@@ -53,6 +53,11 @@ public:
         m_sigmat = props.volume<Volume>("sigma_t", 1.f);
         m_scale = props.float_("scale", 1.0f);
 
+        m_mesh_id = props.int_("mesh_id", 0);
+        if(m_mesh_id <= 0){
+            Log(Error, "The mesh ID should be set as larger than 0");
+        }
+
         m_g = props.float_("g", 0.8f);
         if (m_g >= 1 || m_g <= -1)
             Log(Error, "The asymmetry parameter must lie in the interval (-1, 1)!");
@@ -203,6 +208,12 @@ public:
         return 0.f;
     }
 
+    Int32 mesh_id(Mask active) const override {
+        MTS_MASKED_FUNCTION(ProfilerPhase::BSDFID, active);
+        Int32 result = m_mesh_id;
+        return select(active, result, 0);
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_parameter("eta", m_eta);
         if (m_specular_reflectance)
@@ -231,6 +242,7 @@ private:
     ref<Volume> m_sigmat, m_albedo;
     Float m_scale;
     ScalarFloat m_g;
+    ScalarInt32 m_mesh_id;
 };
 
 MTS_IMPLEMENT_CLASS_VARIANT(BSSRDF, BSDF)

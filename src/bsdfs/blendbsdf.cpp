@@ -159,6 +159,10 @@ public:
                m_nested_bsdf[1]->pdf(ctx, si, wo, active) * weight;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     MTS_INLINE Float eval_weight(const SurfaceInteraction3f &si, const Mask &active) const {
         return clamp(m_weight->eval_1(si, active), 0.f, 1.f);
     }

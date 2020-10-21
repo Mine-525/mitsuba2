@@ -353,6 +353,10 @@ public:
         return result;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_parameter("alpha", m_alpha);
         callback->put_parameter("eta", m_eta);

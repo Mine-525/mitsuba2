@@ -30,6 +30,7 @@ enum class ProfilerPhase : int {
     ImageBlockPut,              /* ImageBlock::put() */
     BSDFEvaluate,               /* BSDF::eval() and BSDF::pdf() */
     BSDFSample,                 /* BSDF::sample() */
+    BSDFID,                     /* BSDF::medh_id() */
     PhaseFunctionEvaluate,      /* PhaseFunction::eval() and PhaseFunction::pdf() */
     PhaseFunctionSample,        /* PhaseFunction::sample() */
     MediumEvaluate,             /* Medium::eval() and Medium::pdf() */

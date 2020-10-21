@@ -134,6 +134,10 @@ public:
         return select(cos_theta_i > 0.f && cos_theta_o > 0.f, pdf, 0.f);
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_object("reflectance", m_reflectance.get());
     }

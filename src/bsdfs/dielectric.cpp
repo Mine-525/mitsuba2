@@ -325,6 +325,10 @@ public:
         return 0.f;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_parameter("eta", m_eta);
         if (m_specular_reflectance)

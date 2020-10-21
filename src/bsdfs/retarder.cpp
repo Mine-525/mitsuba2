@@ -147,6 +147,10 @@ public:
         }
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_object("theta", m_theta.get());
         callback->put_object("delta", m_delta.get());

@@ -52,6 +52,10 @@ public:
         PYBIND11_OVERLOAD_PURE(Float, BSDF, pdf, ctx, si, wo, active);
     }
 
+    Int32 mesh_id(Mask active) const override {
+        PYBIND11_OVERLOAD_PURE(Int32, BSDF, mesh_id, active);
+    }
+
     std::string to_string() const override {
         PYBIND11_OVERLOAD_PURE(std::string, BSDF, to_string,);
     }
@@ -72,6 +76,8 @@ MTS_PY_EXPORT(BSDF) {
             "ctx"_a, "si"_a, "wo"_a, "active"_a = true, D(BSDF, eval))
         .def("pdf", vectorize(&BSDF::pdf),
             "ctx"_a, "si"_a, "wo"_a, "active"_a = true, D(BSDF, pdf))
+        .def("mesh_id", vectorize(&BSDF::mesh_id),
+            "active"_a = true, D(BSDF, mesh_id))
         .def("eval_null_transmission", vectorize(&BSDF::eval_null_transmission),
             "si"_a, "active"_a = true, D(BSDF, eval_null_transmission))
         .def("flags", py::overload_cast<Mask>(&BSDF::flags, py::const_),
@@ -119,6 +125,12 @@ MTS_PY_EXPORT(BSDF) {
                 return ptr->flags(active); }),
             "ptr"_a, "active"_a = true,
             D(BSDF, flags));
+        bsdf.def_static(
+            "mesh_id_vec",
+            vectorize([](const BSDFPtr &ptr, Mask active) {
+                return ptr->mesh_id(active); }),
+            "ptr"_a, "active"_a = true,
+            D(BSDF, mesh_id));
     }
 
     MTS_PY_REGISTER_OBJECT("register_bsdf", BSDF)

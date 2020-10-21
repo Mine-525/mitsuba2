@@ -66,6 +66,10 @@ public:
         return 0.f;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     Spectrum eval_null_transmission(const SurfaceInteraction3f & /*si*/,
                                     Mask /*active*/) const override {
         return unpolarized<Spectrum>(1.f);

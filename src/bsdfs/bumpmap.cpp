@@ -178,6 +178,10 @@ public:
         return result;
     }
 
+    Int32 mesh_id(Mask /*active*/) const override {
+        return 0;
+    }
+
     void traverse(TraversalCallback *callback) override {
         callback->put_object("nested_bsdf", m_nested_bsdf.get());
         callback->put_object("nested_texture", m_nested_texture.get());

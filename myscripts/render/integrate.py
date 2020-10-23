@@ -3,6 +3,7 @@ import numpy as np
 import enoki as ek
 import render_config as config
 import mitsuba
+from bssrdf import BSSRDF
 
 mitsuba.set_variant(config.variant)
 
@@ -124,6 +125,8 @@ def render_sample(scene, sampler, rays):
 
     depth = 0
 
+    # bssrdf = BSSRDF(config.model_name)
+
     while(True):
         depth += 1
 
@@ -178,8 +181,27 @@ def render_sample(scene, sampler, rays):
         is_bssrdf = (active & has_flag(BSDF.flags_vec(bsdf), BSDFFlags.BSSRDF)
                      & (Frame3f.cos_theta(bs.wo) < Float(0.0)))
 
-        # Process for BSSRDF
-        print(bs.g)
+        ##### Process for BSSRDF #####
+        # TODO: Convert incident position into local coordinates of mesh of interested as tensor
+        in_pos = ek.select(is_bssrdf, si.p, Vector3f(0))
+
+        # Get transform matrix w.r.t each mesh of BSSDF
+        mesh_id = bsdf.mesh_id(is_bssrdf)
+        transform_mat = get_trans_mat(mesh_id)
+        
+        # TODO: Get properties, e.g., medium params and incident angle as tensor
+
+        # TODO: Get height map around incident position as tensor
+
+        # TODO: Estimate position and absorption probability with VAE as mitsuba types
+        # pos_recon_local, abs_recon = bssrdf.estimate(in_pos, im, props, sigma_n, is_bssrdf)
+        # TODO: Convert from mesh coordinates to world coordinates
+
+        # TODO: Project estimated position onto nearest mesh
+
+        # TODO: Apply absorption probability
+        ##############################
+        
 
         # Intersect the BSDF ray against the scene geometry
         rays = RayDifferential3f(si.spawn_ray(si.to_world(bs.wo)))

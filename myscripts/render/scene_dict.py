@@ -22,7 +22,7 @@ scene_dict = {
         "far_clip": 1000,
         "fov_axis": "smaller",
 
-        "to_world": ScalarTransform4f.look_at(origin=[162, 54, 216],
+        "to_world": ScalarTransform4f.look_at(origin=[54, 162, 216],
                                             target=[0,0,10],
                                             up=[0,0,1]),
 
@@ -74,15 +74,59 @@ scene_dict = {
 
     "wall1": {
         "type": "rectangle",
-        "to_world":  ScalarTransform4f.rotate([0,1,0], angle=90)
-                    * ScalarTransform4f.translate([-150, 0, -150])
+        "to_world": ScalarTransform4f.translate([-150, 0, 150])
+                    * ScalarTransform4f.rotate([0,1,0], angle=90)
                     * ScalarTransform4f.scale(150)
     },
 
     "wall2": {
         "type": "rectangle",
-        "to_world":  ScalarTransform4f.rotate([1,0,0], angle=-90)
-                    * ScalarTransform4f.translate([0, -150, -150])
+        "to_world": ScalarTransform4f.translate([0, -150, 150])
+                    * ScalarTransform4f.rotate([1,0,0], angle=-90)
                     * ScalarTransform4f.scale(150)
+    },
+
+    # bottom
+    "1": {
+        "type": "rectangle",
+        "to_world": ScalarTransform4f.rotate([1,0,0], angle=180)
+                    * ScalarTransform4f.scale(30)
+    },
+
+    # side
+    "2": {
+        "type": "rectangle",
+        "to_world":  ScalarTransform4f.translate([0, 30, 30])
+                    * ScalarTransform4f.rotate([1,0,0], angle=-90)
+                    * ScalarTransform4f.scale(30)
+    },
+
+    "3": {
+        "type": "rectangle",
+        "to_world":  ScalarTransform4f.translate([30, 0, 30])
+                    * ScalarTransform4f.rotate([0,1,0], angle=90)
+                    * ScalarTransform4f.scale(30)
+    },
+
+    "4": {
+        "type": "rectangle",
+        "to_world":  ScalarTransform4f.translate([0, -30, 30])
+                    * ScalarTransform4f.rotate([1,0,0], angle=90)
+                    * ScalarTransform4f.scale(30)
+    },
+    
+    "5": {
+        "type": "rectangle",
+        "to_world":  ScalarTransform4f.translate([-30, 0, 30])
+                    * ScalarTransform4f.rotate([0,1,0], angle=-90)
+                    * ScalarTransform4f.scale(30)
+    },
+
+    # top
+    "6": {
+        "type": "rectangle",
+        "to_world": ScalarTransform4f.translate([0,0,60])
+                    * ScalarTransform4f.scale(30)
     }
+    
 }

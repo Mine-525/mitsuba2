@@ -1,19 +1,17 @@
 """Basic scene file format as dict type"""
 
-from numpy.lib.function_base import angle
+import sys
+sys.path.append("myscripts/render")
+
 import mitsuba
 import render_config as config
 
 mitsuba.set_variant(config.variant)
 
-from mitsuba.core import ScalarTransform3f, ScalarTransform4f
+from mitsuba.core import ScalarTransform4f
 
 scene_dict = {
     "type": "scene",
-    "integrator": {
-        "type": "path",
-        "max_depth": 128
-    },
 
     "sensor":{
         "type": "perspective",
@@ -28,7 +26,7 @@ scene_dict = {
 
         "sampler": {
             "type": "independent",
-            "sample_count": 128,
+            "sample_count": 16,
             "seed": 4
         },
 
@@ -44,7 +42,7 @@ scene_dict = {
 
     "emitter": {
         "type": "envmap",
-        "filename": "envmap.exr",
+        "filename": "myscripts/render/dict/envmap.exr",
         "to_world": ScalarTransform4f.rotate([1,0,0], angle=90)
     },
 
@@ -84,49 +82,6 @@ scene_dict = {
         "to_world": ScalarTransform4f.translate([0, -150, 150])
                     * ScalarTransform4f.rotate([1,0,0], angle=-90)
                     * ScalarTransform4f.scale(150)
-    },
-
-    # bottom
-    "1": {
-        "type": "rectangle",
-        "to_world": ScalarTransform4f.rotate([1,0,0], angle=180)
-                    * ScalarTransform4f.scale(30)
-    },
-
-    # side
-    "2": {
-        "type": "rectangle",
-        "to_world":  ScalarTransform4f.translate([0, 30, 30])
-                    * ScalarTransform4f.rotate([1,0,0], angle=-90)
-                    * ScalarTransform4f.scale(30)
-    },
-
-    "3": {
-        "type": "rectangle",
-        "to_world":  ScalarTransform4f.translate([30, 0, 30])
-                    * ScalarTransform4f.rotate([0,1,0], angle=90)
-                    * ScalarTransform4f.scale(30)
-    },
-
-    "4": {
-        "type": "rectangle",
-        "to_world":  ScalarTransform4f.translate([0, -30, 30])
-                    * ScalarTransform4f.rotate([1,0,0], angle=90)
-                    * ScalarTransform4f.scale(30)
-    },
-    
-    "5": {
-        "type": "rectangle",
-        "to_world":  ScalarTransform4f.translate([-30, 0, 30])
-                    * ScalarTransform4f.rotate([0,1,0], angle=-90)
-                    * ScalarTransform4f.scale(30)
-    },
-
-    # top
-    "6": {
-        "type": "rectangle",
-        "to_world": ScalarTransform4f.translate([0,0,60])
-                    * ScalarTransform4f.scale(30)
     }
     
 }

@@ -1,27 +1,34 @@
 import os
+import sys
 import time
 import mitsuba
 import integrate
 import render_config as config
+import data_pipeline
+
+sys.path.append("myscripts/render/dict")
+from scene_dict import scene_dict
+from mesh_dict import meshes_rectangle
 
 mitsuba.set_variant(config.variant)
 
 from mitsuba.core import Thread
-from mitsuba.core.xml import load_file
+from mitsuba.core.xml import load_file, load_dict
 
 ##### Setting scene #####
-# Scene path
-scenepath = "C:/Users/mineg/mitsuba2/myscripts/render/cbox/cbox.xml"
+bdata = data_pipeline.BSSRDF_Data()
+for i in range(6):
+    i += 1
+    bdata.register_medium(i)
 
-# Add the scene directory to the FileResolver's search path
-Thread.thread().file_resolver().append(os.path.dirname(scenepath))
+meshes_rectangle().register_all_mesh(bdata)
 
-#Load the scene
-scene = load_file(scenepath)
+scene_dict = bdata.add_object(scene_dict)
+scene = load_dict(scene_dict)
 
 # Rendering settings
-spp = 64
-sample_per_pass = 32
+spp = 128
+sample_per_pass = 16
 
 print("Rendering start")
 
